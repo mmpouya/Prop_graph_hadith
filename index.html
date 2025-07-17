@@ -596,8 +596,8 @@
             <span title="رابطه، ارتباط معنایی یا زمانی بین دو گزاره است (مثلاً: ترتیبی، علّی، توضیحی)." style="cursor:help; font-size:1.2rem; color:#00acc1;">ℹ️</span>
         </h3>
         <div class="input-container">
-            <input type="text" id="newGraphSource" placeholder="مثال: 1-1 (ID گزاره مبدا)" class="text-input">
-            <input type="text" id="newGraphTarget" placeholder="مثال: 1-2 (ID گزاره مقصد)" class="text-input">
+            <select id="newGraphSource" class="text-input"></select>
+            <select id="newGraphTarget" class="text-input"></select>
             <input type="text" id="newGraphType" placeholder="مثال: temporal (نوع رابطه)" class="text-input">
             <button class="button button-secondary" onclick="addGraphRelation()">
                 <span>➕</span>
@@ -677,10 +677,31 @@
             selector.onchange = function() {
                 selectedHadithIndex = parseInt(this.value, 10);
                 displayHadith();
+                populatePropDropdowns();
             };
         }
         function getCurrentHadith() {
             return hadiths[selectedHadithIndex] || null;
+        }
+        function populatePropDropdowns() {
+            const hadith = getCurrentHadith();
+            const sourceSelect = document.getElementById('newGraphSource');
+            const targetSelect = document.getElementById('newGraphTarget');
+            if (!sourceSelect || !targetSelect) return;
+            sourceSelect.innerHTML = '';
+            targetSelect.innerHTML = '';
+            if (hadith && Array.isArray(hadith.hadith_propositions)) {
+                hadith.hadith_propositions.forEach(prop => {
+                    const option1 = document.createElement('option');
+                    option1.value = prop.id;
+                    option1.textContent = prop.id + (prop.content ? ' - ' + prop.content : '');
+                    sourceSelect.appendChild(option1);
+                    const option2 = document.createElement('option');
+                    option2.value = prop.id;
+                    option2.textContent = prop.id + (prop.content ? ' - ' + prop.content : '');
+                    targetSelect.appendChild(option2);
+                });
+            }
         }
         function displayHadith() {
             try {
@@ -980,6 +1001,7 @@
                 const hadithContainer = document.getElementById('hadithDisplay');
                 hadithContainer.innerHTML = '<div style="color:#f44336;">خطا در نمایش داده‌ها. لطفاً فایل را بررسی کنید یا با پشتیبانی تماس بگیرید.</div>';
             }
+            populatePropDropdowns();
         }
         function addProposition() {
             const hadith = getCurrentHadith();
@@ -997,17 +1019,18 @@
             hadith.hadith_propositions.push({ id: newId, content: value });
             input.value = '';
             displayHadith();
+            populatePropDropdowns();
         }
         function addGraphRelation() {
             const hadith = getCurrentHadith();
-            const source = document.getElementById('newGraphSource').value.trim();
-            const target = document.getElementById('newGraphTarget').value.trim();
+            const source = document.getElementById('newGraphSource').value;
+            const target = document.getElementById('newGraphTarget').value;
             const type = document.getElementById('newGraphType').value.trim();
             if (!source || !target || !type) return;
             if (!hadith.hadith_propgraph) hadith.hadith_propgraph = [];
             hadith.hadith_propgraph.push({ source, target, type });
-            document.getElementById('newGraphSource').value = '';
-            document.getElementById('newGraphTarget').value = '';
+            document.getElementById('newGraphSource').selectedIndex = 0;
+            document.getElementById('newGraphTarget').selectedIndex = 0;
             document.getElementById('newGraphType').value = '';
             displayHadith();
         }
