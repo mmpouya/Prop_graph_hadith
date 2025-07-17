@@ -523,6 +523,19 @@
         .collapsible-header.active .arrow {
             transform: rotate(180deg);
         }
+        .prop-id-distinct {
+            font-weight: bold;
+            font-size: 0.95em;
+            background: #e0e7ef;
+            color: #1e88e5;
+            border-radius: 4px;
+            padding: 2px 8px;
+            margin-left: 2px;
+            margin-right: 2px;
+            letter-spacing: 0.5px;
+            direction: ltr;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -741,8 +754,12 @@
                         const propHeader = document.createElement('div');
                         propHeader.className = 'proposition-header';
                         const propId = document.createElement('span');
-                        propId.style.color = '#888';
-                        propId.textContent = `ID: ${prop.id}`;
+                        propId.className = 'prop-id-distinct';
+                        propId.textContent = prop.id;
+                        const separator = document.createElement('span');
+                        separator.textContent = '|';
+                        separator.style.margin = '0 8px';
+                        separator.style.color = '#bbb';
                         const propContent = document.createElement('span');
                         propContent.className = 'proposition-content';
                         propContent.textContent = prop.content;
@@ -794,6 +811,7 @@
                             });
                             propHeader.innerHTML = '';
                             propHeader.appendChild(propId);
+                            propHeader.appendChild(separator);
                             propHeader.appendChild(input);
                             propHeader.appendChild(saveButton);
                             propHeader.appendChild(cancelButton);
@@ -809,6 +827,7 @@
                         };
                         propHeader.appendChild(checkbox);
                         propHeader.appendChild(propId);
+                        propHeader.appendChild(separator);
                         propHeader.appendChild(propContent);
                         propHeader.appendChild(editButton);
                         propCard.appendChild(propHeader);
