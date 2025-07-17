@@ -565,6 +565,11 @@
                 <input type="file" id="jsonFile" accept="application/json">
             </label>
         </div>
+        <!-- Navigation Buttons (Top) -->
+        <div id="navButtonsTop" class="buttons" style="justify-content:center; margin-bottom:0.5rem;">
+            <button id="backBtnTop" class="button button-secondary" style="min-width:100px;" onclick="navigateHadith(-1)">قبلی</button>
+            <button id="nextBtnTop" class="button button-secondary" style="min-width:100px;" onclick="navigateHadith(1)">بعدی</button>
+        </div>
         <!-- Hadith Selector Section -->
         <div id="hadithSelectorContainer" style="display:none; margin-bottom:1rem;">
             <h3 style="color:var(--primary-color); margin-bottom:0.5rem;">۲. انتخاب حدیث</h3>
@@ -610,6 +615,11 @@
                 <span>💾</span>
                 <span>ذخیره و دانلود</span>
             </button>
+        </div>
+        <!-- Navigation Buttons (Bottom) -->
+        <div id="navButtonsBottom" class="buttons" style="justify-content:center; margin-top:0.5rem;">
+            <button id="backBtnBottom" class="button button-secondary" style="min-width:100px;" onclick="navigateHadith(-1)">قبلی</button>
+            <button id="nextBtnBottom" class="button button-secondary" style="min-width:100px;" onclick="navigateHadith(1)">بعدی</button>
         </div>
     </div>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
@@ -658,6 +668,7 @@
                     document.getElementById('hadithSelectorContainer').style.display = 'block';
                     showToast('موفقیت', 'فایل با موفقیت بارگذاری شد!', 'success');
                     displayHadith(); // Only call here, after everything is set
+                    updateNavButtons();
                 } catch (error) {
                     showToast('خطا', 'خطا در پردازش فایل JSON. لطفاً یک فایل معتبر انتخاب کنید.', 'error');
                     return;
@@ -665,6 +676,34 @@
             };
             reader.readAsText(file);
         });
+        function navigateHadith(direction) {
+            if (!hadiths.length) return;
+            let newIndex = selectedHadithIndex + direction;
+            if (newIndex < 0) newIndex = 0;
+            if (newIndex >= hadiths.length) newIndex = hadiths.length - 1;
+            if (newIndex !== selectedHadithIndex) {
+                selectedHadithIndex = newIndex;
+                populateHadithSelector();
+                displayHadith();
+            }
+            updateNavButtons();
+        }
+        function updateNavButtons() {
+            const backBtnTop = document.getElementById('backBtnTop');
+            const nextBtnTop = document.getElementById('nextBtnTop');
+            const backBtnBottom = document.getElementById('backBtnBottom');
+            const nextBtnBottom = document.getElementById('nextBtnBottom');
+            if (!hadiths.length) {
+                [backBtnTop, nextBtnTop, backBtnBottom, nextBtnBottom].forEach(btn => { if (btn) btn.disabled = true; });
+                return;
+            }
+            const atStart = selectedHadithIndex === 0;
+            const atEnd = selectedHadithIndex === hadiths.length - 1;
+            if (backBtnTop) backBtnTop.disabled = atStart;
+            if (nextBtnTop) nextBtnTop.disabled = atEnd;
+            if (backBtnBottom) backBtnBottom.disabled = atStart;
+            if (nextBtnBottom) nextBtnBottom.disabled = atEnd;
+        }
         function populateHadithSelector() {
             const selector = document.getElementById('hadithSelector');
             selector.innerHTML = '';
@@ -679,7 +718,9 @@
                 selectedHadithIndex = parseInt(this.value, 10);
                 displayHadith();
                 populatePropDropdowns();
+                updateNavButtons();
             };
+            updateNavButtons();
         }
         function getCurrentHadith() {
             return hadiths[selectedHadithIndex] || null;
@@ -1011,6 +1052,7 @@
                 hadithContainer.innerHTML = '<div style="color:#f44336;">خطا در نمایش داده‌ها. لطفاً فایل را بررسی کنید یا با پشتیبانی تماس بگیرید.</div>';
             }
             populatePropDropdowns();
+            updateNavButtons();
         }
         function addProposition() {
             const hadith = getCurrentHadith();
