@@ -539,7 +539,22 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Overlay for file upload -->
+    <div id="fileUploadOverlay" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(30,136,229,0.18);z-index:20000;display:flex;align-items:center;justify-content:center;">
+        <div style="background:#fff;color:#1565c0;border-radius:14px;box-shadow:0 8px 32px rgba(30,136,229,0.18);padding:2.5rem 2.5rem;max-width:420px;width:90vw;text-align:center;">
+            <h2 style="margin-bottom:1rem;">بارگذاری فایل احادیث</h2>
+            <p style="margin-bottom:2rem;">لطفاً ابتدا فایل JSON احادیث را بارگذاری کنید تا بتوانید از امکانات برنامه استفاده کنید.</p>
+            <label class="file-upload-label" style="margin-bottom:0;">
+                <span>📁 انتخاب فایل JSON</span>
+                <input type="file" id="jsonFileOverlay" accept="application/json">
+            </label>
+        </div>
+    </div>
+    <!-- Dark mode toggle (top left, small) -->
+    <button id="darkModeToggle" style="position:fixed;top:1rem;left:1rem;z-index:10001;display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border-radius:50%;font-size:1.2rem;background:var(--primary-color);color:white;border:none;box-shadow:0 2px 6px rgba(30,136,229,0.10);">
+        <span id="darkModeIcon">🌙</span>
+    </button>
+    <div class="container disabled-ui" id="mainContainer">
         <!-- Step-by-step guide (compact) -->
         <button id="guideBtn" style="position:absolute; top:18px; right:32px; background:transparent; color:#1565c0; border:none; font-size:1.2rem; cursor:pointer; z-index:10; display:flex; align-items:center; gap:4px;">
             <span>راهنما</span> <span style="font-size:1.3rem;">ℹ️</span>
@@ -571,10 +586,15 @@
             <button id="nextBtnTop" class="button button-secondary" style="min-width:100px;" onclick="navigateHadith(1)">بعدی</button>
         </div>
         <!-- Hadith Selector Section -->
-        <div id="hadithSelectorContainer" style="display:none; margin-bottom:1rem;">
+        <div id="hadithSelectorContainer" style="display:none; margin-bottom:1rem;align-items:center;gap:1rem;">
             <h3 style="color:var(--primary-color); margin-bottom:0.5rem;">۲. انتخاب حدیث</h3>
             <label for="hadithSelector">انتخاب حدیث:</label>
             <select id="hadithSelector"></select>
+            <span id="hadithCounter" class="hadith-counter" style="margin-right:1rem;"></span>
+        </div>
+        <!-- Progress bar -->
+        <div id="progressBarContainer" style="width:100%;height:8px;background:#e3f2fd;border-radius:4px;margin-bottom:1rem;display:none;">
+            <div id="progressBar" style="height:100%;background:#1e88e5;width:0%;border-radius:4px;transition:width 0.3s;"></div>
         </div>
         <!-- Hadith Display Section -->
         <h3 style="color:var(--primary-color); margin-bottom:0.5rem;">۳. نمایش و ویرایش حدیث</h3>
@@ -649,6 +669,22 @@
             setTimeout(() => toast.classList.add('show'), 100);
             setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
         }
+        // Overlay logic and UI enable/disable
+        let fileLoaded = false;
+        function setUIEnabled(enabled) {
+            const container = document.getElementById('mainContainer');
+            if (enabled) {
+                container.classList.remove('disabled-ui');
+                Array.from(container.querySelectorAll('input, select, button')).forEach(el => {
+                    if (!el.classList.contains('file-upload-label')) el.disabled = false;
+                });
+            } else {
+                container.classList.add('disabled-ui');
+                Array.from(container.querySelectorAll('input, select, button')).forEach(el => {
+                    if (!el.classList.contains('file-upload-label')) el.disabled = true;
+                });
+            }
+        }
         document.getElementById('jsonFile').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -663,11 +699,14 @@
                     }
                     hadiths = raw;
                     selectedHadithIndex = 0;
-                    console.log('Loaded hadiths:', hadiths);
+                    document.getElementById('fileUploadOverlay').style.display = 'none';
+                    setUIEnabled(true);
+                    fileLoaded = true;
                     populateHadithSelector();
-                    document.getElementById('hadithSelectorContainer').style.display = 'block';
+                    document.getElementById('hadithSelectorContainer').style.display = 'flex';
+                    document.getElementById('progressBarContainer').style.display = 'block';
                     showToast('موفقیت', 'فایل با موفقیت بارگذاری شد!', 'success');
-                    displayHadith(); // Only call here, after everything is set
+                    displayHadith();
                     updateNavButtons();
                 } catch (error) {
                     showToast('خطا', 'خطا در پردازش فایل JSON. لطفاً یک فایل معتبر انتخاب کنید.', 'error');
@@ -907,6 +946,18 @@
                     const title = document.createElement('h3');
                     title.textContent = 'روابط گزاره‌ها (Propgraph)';
                     graphSection.appendChild(title);
+                    // Graph controls
+                    const graphControls = document.createElement('div');
+                    graphControls.style.display = 'flex';
+                    graphControls.style.justifyContent = 'flex-end';
+                    graphControls.style.gap = '0.5rem';
+                    graphControls.style.marginBottom = '0.5rem';
+                    graphControls.innerHTML = `
+                        <button id="zoomInBtn" title="بزرگ‌نمایی" style="padding:0.4rem 0.8rem;font-size:1.2rem;border-radius:6px;border:1px solid #1e88e5;background:#e3f2fd;color:#1e88e5;cursor:pointer;">+</button>
+                        <button id="zoomOutBtn" title="کوچک‌نمایی" style="padding:0.4rem 0.8rem;font-size:1.2rem;border-radius:6px;border:1px solid #1e88e5;background:#e3f2fd;color:#1e88e5;cursor:pointer;">-</button>
+                        <button id="fitBtn" title="نمایش کامل گراف" style="padding:0.4rem 0.8rem;font-size:1.2rem;border-radius:6px;border:1px solid #1e88e5;background:#e3f2fd;color:#1e88e5;cursor:pointer;">🖼️</button>
+                    `;
+                    graphSection.appendChild(graphControls);
                     // Visual graph placeholder
                     const graphPlaceholder = document.createElement('div');
                     graphPlaceholder.id = 'propgraph-visual';
@@ -940,7 +991,15 @@
                                 }
                             }
                         };
-                        new vis.Network(graphPlaceholder, data, options);
+                        let network = new vis.Network(graphPlaceholder, data, options);
+                        setTimeout(() => {
+                            const zoomInBtn = document.getElementById('zoomInBtn');
+                            const zoomOutBtn = document.getElementById('zoomOutBtn');
+                            const fitBtn = document.getElementById('fitBtn');
+                            if (zoomInBtn) zoomInBtn.onclick = () => network.moveTo({scale: network.getScale()*1.2});
+                            if (zoomOutBtn) zoomOutBtn.onclick = () => network.moveTo({scale: network.getScale()/1.2});
+                            if (fitBtn) fitBtn.onclick = () => network.fit({animation:true});
+                        }, 0);
                     } else {
                         graphPlaceholder.innerHTML = '<span style="color:#bdb76b;">(کتابخانه گراف بارگذاری نشد)</span>';
                     }
@@ -1053,6 +1112,15 @@
             }
             populatePropDropdowns();
             updateNavButtons();
+            // Update counter and progress bar
+            const counter = document.getElementById('hadithCounter');
+            if (counter && hadiths.length) {
+                counter.textContent = `حدیث ${selectedHadithIndex+1} از ${hadiths.length}`;
+            }
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar && hadiths.length) {
+                progressBar.style.width = `${((selectedHadithIndex+1)/hadiths.length)*100}%`;
+            }
         }
         function addProposition() {
             const hadith = getCurrentHadith();
@@ -1120,16 +1188,52 @@
                 event.preventDefault();
             }
         });
+        // Overlay file input
+        document.getElementById('jsonFileOverlay').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            uploadedFileName = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const raw = JSON.parse(e.target.result);
+                    if (!Array.isArray(raw) || raw.length === 0) {
+                        showToast('خطا', 'ساختار فایل JSON باید آرایه‌ای از احادیث باشد.', 'error');
+                        return;
+                    }
+                    hadiths = raw;
+                    selectedHadithIndex = 0;
+                    document.getElementById('fileUploadOverlay').style.display = 'none';
+                    setUIEnabled(true);
+                    fileLoaded = true;
+                    populateHadithSelector();
+                    document.getElementById('hadithSelectorContainer').style.display = 'flex';
+                    document.getElementById('progressBarContainer').style.display = 'block';
+                    showToast('موفقیت', 'فایل با موفقیت بارگذاری شد!', 'success');
+                    displayHadith();
+                    updateNavButtons();
+                } catch (error) {
+                    showToast('خطا', 'خطا در پردازش فایل JSON. لطفاً یک فایل معتبر انتخاب کنید.', 'error');
+                    return;
+                }
+            };
+            reader.readAsText(file);
+        });
+        // On load, show overlay and disable UI
+        window.addEventListener('DOMContentLoaded', function() {
+            setUIEnabled(false);
+            document.getElementById('fileUploadOverlay').style.display = 'flex';
+        });
         document.getElementById('darkModeToggle').addEventListener('click', function() {
             document.body.classList.toggle('dark-mode');
             const isDarkMode = document.body.classList.contains('dark-mode');
-            this.textContent = isDarkMode ? this.dataset.light : this.dataset.dark;
+            document.getElementById('darkModeIcon').textContent = isDarkMode ? '☀️' : '🌙';
             localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
         });
         window.onload = function() {
             if (localStorage.getItem('darkMode') === 'enabled') {
                 document.body.classList.add('dark-mode');
-                document.getElementById('darkModeToggle').textContent = '☀️ حالت روز';
+                document.getElementById('darkModeIcon').textContent = '☀️';
             }
         }
         // Floating Back to Top Button logic
