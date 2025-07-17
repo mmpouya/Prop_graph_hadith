@@ -612,6 +612,7 @@
             </button>
         </div>
     </div>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <script>
         let hadiths = [];
         let selectedHadithIndex = 0;
@@ -878,22 +879,20 @@
                     graphPlaceholder.style.margin = '1rem 0';
                     graphSection.appendChild(graphPlaceholder);
                     // Render vis-network graph
-                    setTimeout(() => {
-                        if (window.vis && hadith.hadith_propositions && hadith.hadith_propgraph) {
-                            const nodes = hadith.hadith_propositions.map(p => ({ id: p.id, label: p.content }));
-                            const edges = hadith.hadith_propgraph.map(r => ({ from: r.source, to: r.target, label: r.type }));
-                            const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
-                            const options = {
-                                nodes: { shape: 'box', font: { align: 'right', size: 16 } },
-                                edges: { arrows: 'to', font: { align: 'middle', size: 14 } },
-                                layout: { hierarchical: false },
-                                physics: { enabled: true }
-                            };
-                            new vis.Network(graphPlaceholder, data, options);
-                        } else {
-                            graphPlaceholder.innerHTML = '<span style="color:#bdb76b;">(کتابخانه گراف بارگذاری نشد)</span>';
-                        }
-                    }, 0);
+                    if (window.vis && hadith.hadith_propositions && hadith.hadith_propgraph) {
+                        const nodes = hadith.hadith_propositions.map(p => ({ id: p.id, label: p.content }));
+                        const edges = hadith.hadith_propgraph.map(r => ({ from: r.source, to: r.target, label: r.type }));
+                        const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+                        const options = {
+                            nodes: { shape: 'box', font: { align: 'right', size: 16 } },
+                            edges: { arrows: 'to', font: { align: 'middle', size: 14 } },
+                            layout: { hierarchical: false },
+                            physics: { enabled: true }
+                        };
+                        new vis.Network(graphPlaceholder, data, options);
+                    } else {
+                        graphPlaceholder.innerHTML = '<span style="color:#bdb76b;">(کتابخانه گراف بارگذاری نشد)</span>';
+                    }
                     const table = document.createElement('table');
                     table.style.width = '100%';
                     table.style.background = '#fff';
@@ -1104,6 +1103,5 @@
             if (e.target === this) this.style.display = 'none';
         });
     </script>
-    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </body>
 </html>
