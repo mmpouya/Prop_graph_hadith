@@ -484,6 +484,45 @@
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
+
+        /* Collapsible Styles */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.7rem 1rem;
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .collapsible-header:hover {
+            background: #f0f4c3;
+        }
+
+        .collapsible-content {
+            padding: 1rem;
+            background: var(--bg-color);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            border: 1px solid var(--border-color);
+            margin-top: -1px; /* Overlap with header border */
+        }
+
+        .arrow {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .collapsible-header.active .arrow {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body>
@@ -517,6 +556,8 @@
         <div id="hadithDisplay">
             <!-- Content will be dynamically inserted here -->
         </div>
+        <!-- Floating Back to Top Button -->
+        <button id="backToTopBtn" title="بازگشت به بالا" style="display:none; position:fixed; bottom:32px; left:32px; z-index:1000; background:#1e88e5; color:white; border:none; border-radius:50%; width:48px; height:48px; font-size:2rem; box-shadow:0 2px 8px rgba(0,0,0,0.2); cursor:pointer; transition:background 0.2s;">↑</button>
         <!-- Propositions Section -->
         <h3 style="color:var(--primary-color); margin-bottom:0.5rem; display:flex; align-items:center; gap:8px;">
             ۴. افزودن گزاره جدید
@@ -631,18 +672,54 @@
                     hadithContainer.innerHTML = '<div style="color:#f44336;">هیچ حدیثی برای نمایش وجود ندارد.</div>';
                     return;
                 }
-                // Content
-                const contentSection = document.createElement('div');
-                contentSection.className = 'hadith-content';
-                const persianContent = document.createElement('div');
-                persianContent.className = 'hadith-persian';
-                persianContent.textContent = hadith.content || '(متن فارسی موجود نیست)';
-                contentSection.appendChild(persianContent);
+                // Collapsible Farsi Content
+                const farsiSection = document.createElement('div');
+                farsiSection.style.marginBottom = '0.5rem';
+                const farsiHeader = document.createElement('button');
+                farsiHeader.className = 'collapsible-header';
+                farsiHeader.style = 'width:100%; text-align:right; background:#e3f2fd; color:#1565c0; border:none; border-radius:8px; padding:0.7rem 1rem; font-size:1.1rem; margin-bottom:0.2rem; cursor:pointer; display:flex; align-items:center; gap:8px;';
+                farsiHeader.innerHTML = '<span>متن فارسی حدیث</span><span class="arrow">▼</span>';
+                const farsiContent = document.createElement('div');
+                farsiContent.className = 'collapsible-content';
+                farsiContent.style = 'padding:1rem; background:var(--bg-color); border-radius:8px; font-size:1.1rem; line-height:1.8;';
+                farsiContent.textContent = hadith.content || '(متن فارسی موجود نیست)';
+                farsiSection.appendChild(farsiHeader);
+                farsiSection.appendChild(farsiContent);
+                hadithContainer.appendChild(farsiSection);
+                // Collapsible & Sticky Arabic Content
+                const arabicSection = document.createElement('div');
+                arabicSection.style.marginBottom = '0.5rem';
+                arabicSection.style.position = 'sticky';
+                arabicSection.style.top = '0';
+                arabicSection.style.zIndex = '10';
+                arabicSection.style.background = 'rgba(255,255,255,0.97)';
+                arabicSection.style.borderRadius = '8px';
+                arabicSection.style.boxShadow = '0 2px 8px rgba(30,136,229,0.07)';
+                const arabicHeader = document.createElement('button');
+                arabicHeader.className = 'collapsible-header';
+                arabicHeader.style = 'width:100%; text-align:right; background:#e3f2fd; color:#1e88e5; border:none; border-radius:8px; padding:0.7rem 1rem; font-size:1.1rem; margin-bottom:0.2rem; cursor:pointer; display:flex; align-items:center; gap:8px;';
+                arabicHeader.innerHTML = '<span>متن عربی حدیث</span><span class="arrow">▼</span>';
                 const arabicContent = document.createElement('div');
-                arabicContent.className = 'hadith-arabic';
+                arabicContent.className = 'collapsible-content';
+                arabicContent.style = 'padding:1rem; background:var(--bg-color); border-radius:8px; font-size:1.2rem; color:var(--primary-color); line-height:1.8;';
                 arabicContent.textContent = hadith.content_ar || '';
-                contentSection.appendChild(arabicContent);
-                hadithContainer.appendChild(contentSection);
+                arabicSection.appendChild(arabicHeader);
+                arabicSection.appendChild(arabicContent);
+                hadithContainer.appendChild(arabicSection);
+                // Collapsible logic
+                [farsiHeader, arabicHeader].forEach((header, idx) => {
+                    header.addEventListener('click', function() {
+                        const content = this.nextElementSibling;
+                        const arrow = this.querySelector('.arrow');
+                        if (content.style.display === 'none') {
+                            content.style.display = '';
+                            arrow.textContent = '▼';
+                        } else {
+                            content.style.display = 'none';
+                            arrow.textContent = '▲';
+                        }
+                    });
+                });
                 // Propositions
                 if (Array.isArray(hadith.hadith_propositions) && hadith.hadith_propositions.length > 0) {
                     const propSection = document.createElement('div');
@@ -877,6 +954,18 @@
                 document.getElementById('darkModeToggle').textContent = '☀️ حالت روز';
             }
         }
+        // Floating Back to Top Button logic
+        const backToTopBtn = document.getElementById('backToTopBtn');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 200) {
+                backToTopBtn.style.display = 'block';
+            } else {
+                backToTopBtn.style.display = 'none';
+            }
+        });
+        backToTopBtn.onclick = function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
     </script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </body>
