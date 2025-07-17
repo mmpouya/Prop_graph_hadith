@@ -502,7 +502,7 @@
         }
 
         .collapsible-header:hover {
-            background: #f0f4c3;
+            background: #fff7ef;
         }
 
         .collapsible-content {
@@ -870,7 +870,7 @@
                     const graphPlaceholder = document.createElement('div');
                     graphPlaceholder.id = 'propgraph-visual';
                     graphPlaceholder.style.height = '480px';
-                    graphPlaceholder.style.background = '#f0f4c3';
+                    graphPlaceholder.style.background = '#fff7ef';
                     graphPlaceholder.style.border = '1.5px dashed #bdb76b';
                     graphPlaceholder.style.borderRadius = '8px';
                     graphPlaceholder.style.display = 'flex';
@@ -887,7 +887,17 @@
                             nodes: { shape: 'box', font: { align: 'right', size: 16 } },
                             edges: { arrows: 'to', font: { align: 'middle', size: 14 } },
                             layout: { hierarchical: false },
-                            physics: { enabled: true }
+                            physics: {
+                                enabled: true,
+                                solver: 'repulsion',
+                                repulsion: {
+                                    nodeDistance: 50, // higher = more distance between nodes
+                                    centralGravity: 0.1,
+                                    springLength: 100,
+                                    springConstant: 0.01,
+                                    damping: 0.09
+                                }
+                            }
                         };
                         new vis.Network(graphPlaceholder, data, options);
                     } else {
