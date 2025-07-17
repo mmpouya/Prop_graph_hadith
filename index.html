@@ -527,15 +527,22 @@
 </head>
 <body>
     <div class="container">
-        <!-- Step-by-step guide -->
-        <div class="step-guide" style="background:#e3f2fd; color:#1565c0; border-radius:10px; padding:1rem 1.5rem; margin-bottom:1.5rem; font-size:1.05rem;">
-            <strong>راهنمای مراحل:</strong>
-            <ol style="margin:0; padding-right:1.2rem;">
-                <li>ابتدا فایل JSON احادیث را بارگذاری کنید.</li>
-                <li>حدیث مورد نظر را از لیست انتخاب نمایید.</li>
-                <li>گزاره‌ها و روابط را ویرایش یا اضافه کنید.</li>
-                <li>در پایان، فایل ویرایش‌شده را ذخیره و دانلود نمایید.</li>
-            </ol>
+        <!-- Step-by-step guide (compact) -->
+        <button id="guideBtn" style="position:absolute; top:18px; right:32px; background:transparent; color:#1565c0; border:none; font-size:1.2rem; cursor:pointer; z-index:10; display:flex; align-items:center; gap:4px;">
+            <span>راهنما</span> <span style="font-size:1.3rem;">ℹ️</span>
+        </button>
+        <!-- Guide Modal -->
+        <div id="guideModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(30,136,229,0.12); z-index:9999; align-items:center; justify-content:center;">
+            <div style="background:#fff; color:#1565c0; border-radius:14px; box-shadow:0 8px 32px rgba(30,136,229,0.18); padding:2rem 2.5rem; max-width:420px; width:90vw; position:relative;">
+                <button id="closeGuideModal" style="position:absolute; top:12px; left:12px; background:transparent; border:none; font-size:1.3rem; color:#1565c0; cursor:pointer;">✖️</button>
+                <strong style="font-size:1.1rem;">راهنمای مراحل:</strong>
+                <ol style="margin:1rem 0 0 0; padding-right:1.2rem; color:#333; font-size:1.02rem;">
+                    <li>ابتدا فایل JSON احادیث را بارگذاری کنید.</li>
+                    <li>حدیث مورد نظر را از لیست انتخاب نمایید.</li>
+                    <li>گزاره‌ها و روابط را ویرایش یا اضافه کنید.</li>
+                    <li>در پایان، فایل ویرایش‌شده را ذخیره و دانلود نمایید.</li>
+                </ol>
+            </div>
         </div>
         <!-- File Upload Section -->
         <h3 style="color:var(--primary-color); margin-bottom:0.5rem;">۱. بارگذاری فایل احادیث</h3>
@@ -793,17 +800,17 @@
                             input.focus();
                         };
                         // Delete button
-                        const deleteButton = document.createElement('button');
-                        deleteButton.className = 'edit-button';
-                        deleteButton.innerHTML = '🗑️';
-                        deleteButton.onclick = function() {
-                            hadith.hadith_propositions.splice(idx, 1);
-                            displayHadith();
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.style.marginLeft = '8px';
+                        checkbox.checked = (typeof prop._checked === 'undefined') ? true : prop._checked;
+                        checkbox.onchange = function() {
+                            prop._checked = this.checked;
                         };
+                        propHeader.appendChild(checkbox);
                         propHeader.appendChild(propId);
                         propHeader.appendChild(propContent);
                         propHeader.appendChild(editButton);
-                        propHeader.appendChild(deleteButton);
                         propCard.appendChild(propHeader);
                         propSection.appendChild(propCard);
                     });
@@ -858,22 +865,89 @@
                         '<th title="ID گزاره مبدا">مبدا</th>' +
                         '<th title="ID گزاره مقصد">مقصد</th>' +
                         '<th title="نوع رابطه (مثلاً temporal, causal)">نوع</th>' +
-                        '<th title="حذف رابطه">حذف</th>' +
+                        '<th title="انتخاب">انتخاب</th>' +
+                        '<th>ویرایش</th>' +
                         '</tr>';
                     table.appendChild(thead);
                     const tbody = document.createElement('tbody');
                     hadith.hadith_propgraph.forEach((rel, idx) => {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `<td>${rel.source}</td><td>${rel.target}</td><td>${rel.type}</td>`;
-                        const delTd = document.createElement('td');
-                        const delBtn = document.createElement('button');
-                        delBtn.textContent = '🗑️';
-                        delBtn.onclick = function() {
-                            hadith.hadith_propgraph.splice(idx, 1);
-                            displayHadith();
-                        };
-                        delTd.appendChild(delBtn);
-                        tr.appendChild(delTd);
+                        if (rel._editing) {
+                            // Edit mode: show inputs for source, target, type
+                            const tdSource = document.createElement('td');
+                            const inputSource = document.createElement('input');
+                            inputSource.type = 'text';
+                            inputSource.value = rel.source;
+                            inputSource.className = 'edit-input';
+                            tdSource.appendChild(inputSource);
+                            tr.appendChild(tdSource);
+                            const tdTarget = document.createElement('td');
+                            const inputTarget = document.createElement('input');
+                            inputTarget.type = 'text';
+                            inputTarget.value = rel.target;
+                            inputTarget.className = 'edit-input';
+                            tdTarget.appendChild(inputTarget);
+                            tr.appendChild(tdTarget);
+                            const tdType = document.createElement('td');
+                            const inputType = document.createElement('input');
+                            inputType.type = 'text';
+                            inputType.value = rel.type;
+                            inputType.className = 'edit-input';
+                            tdType.appendChild(inputType);
+                            tr.appendChild(tdType);
+                            // Checkbox
+                            const checkTd = document.createElement('td');
+                            const relCheckbox = document.createElement('input');
+                            relCheckbox.type = 'checkbox';
+                            relCheckbox.checked = (typeof rel._checked === 'undefined') ? true : rel._checked;
+                            relCheckbox.onchange = function() { rel._checked = this.checked; };
+                            checkTd.appendChild(relCheckbox);
+                            tr.appendChild(checkTd);
+                            // Save/Cancel buttons
+                            const tdActions = document.createElement('td');
+                            tdActions.className = 'edit-actions';
+                            const saveBtn = document.createElement('button');
+                            saveBtn.className = 'save-edit';
+                            saveBtn.textContent = 'ذخیره';
+                            saveBtn.onclick = function() {
+                                rel.source = inputSource.value.trim();
+                                rel.target = inputTarget.value.trim();
+                                rel.type = inputType.value.trim();
+                                delete rel._editing;
+                                displayHadith();
+                            };
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.className = 'cancel-edit';
+                            cancelBtn.textContent = 'انصراف';
+                            cancelBtn.onclick = function() {
+                                delete rel._editing;
+                                displayHadith();
+                            };
+                            tdActions.appendChild(saveBtn);
+                            tdActions.appendChild(cancelBtn);
+                            tr.appendChild(tdActions);
+                        } else {
+                            tr.innerHTML = `<td>${rel.source}</td><td>${rel.target}</td><td>${rel.type}</td>`;
+                            // Checkbox
+                            const checkTd = document.createElement('td');
+                            const relCheckbox = document.createElement('input');
+                            relCheckbox.type = 'checkbox';
+                            relCheckbox.checked = (typeof rel._checked === 'undefined') ? true : rel._checked;
+                            relCheckbox.onchange = function() { rel._checked = this.checked; };
+                            checkTd.appendChild(relCheckbox);
+                            tr.appendChild(checkTd);
+                            // Edit button
+                            const tdActions = document.createElement('td');
+                            const editBtn = document.createElement('button');
+                            editBtn.className = 'edit-button';
+                            editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>';
+                            editBtn.onclick = function() {
+                                rel._editing = true;
+                                displayHadith();
+                            };
+                            tdActions.appendChild(editBtn);
+                            tr.appendChild(tdActions);
+                        }
                         tbody.appendChild(tr);
                     });
                     table.appendChild(tbody);
@@ -920,6 +994,17 @@
         }
         function downloadHadith() {
             if (!hadiths.length) return;
+            // For each hadith, filter propositions and relations by _checked
+            hadiths.forEach(h => {
+                if (Array.isArray(h.hadith_propositions)) {
+                    h.hadith_propositions = h.hadith_propositions.filter(p => (typeof p._checked === 'undefined') ? true : p._checked)
+                        .map(p => { const cp = { ...p }; delete cp._checked; return cp; });
+                }
+                if (Array.isArray(h.hadith_propgraph)) {
+                    h.hadith_propgraph = h.hadith_propgraph.filter(r => (typeof r._checked === 'undefined') ? true : r._checked)
+                        .map(r => { const cr = { ...r }; delete cr._checked; return cr; });
+                }
+            });
             let outputFileName = uploadedFileName + '_edited.json';
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(hadiths, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -966,6 +1051,16 @@
         backToTopBtn.onclick = function() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
+        // Guide Modal logic
+        document.getElementById('guideBtn').onclick = function() {
+            document.getElementById('guideModal').style.display = 'flex';
+        };
+        document.getElementById('closeGuideModal').onclick = function() {
+            document.getElementById('guideModal').style.display = 'none';
+        };
+        document.getElementById('guideModal').addEventListener('click', function(e) {
+            if (e.target === this) this.style.display = 'none';
+        });
     </script>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </body>
