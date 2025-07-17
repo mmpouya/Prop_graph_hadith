@@ -1,0 +1,48 @@
+{
+    "1": {
+        "hadith_num": "1",
+        "vol_tiltle": "ترجمه اصول کافی جلد اول",
+        "content": [
+            "1. خبر داد به ما...\n «چون خداوند خرد را آفريد او را به سخن درآورد سپس به او فرمود: رو كن، و او رو كرد. سپس فرمودش: برگرد، و او برگشت، آن گاه فرمود: به توانمندى و شكوهم سوگند، آفريده‌اى نيافريده‌ام كه در نزد من دوست‌داشتنى‌تر از تو باشد، و تو را جز در كسى كه دوست دارم كامل نگردانم. هان! من تنها به تو فرمان مى‌دهم و تنها تو را نهى مى‌كنم، و تنها به تو پاداش مى‌دهم و تنها تو را به كيفر مى‌رسانم»."
+        ],
+        "content_ar": [
+            "1. \nعَنْ أَبِي جَعْفَرٍ عليه‌السلام، قَالَ: «لَمَّا خَلَقَ اللّه‌ُ الْعَقْلَ اسْتَنْطَقَهُ، ثُمَّ قَالَ لَهُ: أَقْبِلْ، فَأَقْبَلَ، ثُمَّ قَالَ لَهُ: أَدْبِرْ، فَأَدْبَرَ، ثُمَّ قَالَ: وَعِزَّتِي وَجَلاَلِي مَا خَلَقْتُ خَلْقَاً هُوَ أَحَبُّ إِلَيَّ مِنْكَ، وَلاَ أَكْمَلْتُكَ إِلاَّ فِي مَنْ أُحِبُّ، أَمَا إِنِّي إِيَّاكَ آمُرُ وَإِيَّاكَ أَنْهى، وَإِيَّاكَ أُثِيبُ وَإِيَّاكَ أُعَاقِبُ»."
+        ],
+        "hadith_propositions": [
+            {
+                "id": "1-1",
+                "content": "1. عندما خلق الله العقل استنطقه.",
+                "entity": {
+                    "Reasoning": "In this sentence, 'الله' is a divine individual and 'العقل' is treated as an individual agent being created and interrogated. The verb 'خلق' is nominalized as 'خلق' referring to the act of creation. The verb 'استنطقه' corresponds to the act of interrogation or questioning, nominalized as 'استنطاق'.",
+                    "Individual": [
+                        "الله",
+                        "العقل"
+                    ],
+                    "Event": [
+                        "خلق",
+                        "استنطاق"
+                    ],
+                    "quality": [],
+                    "substance": []
+                }
+            },
+            {
+                "id": "1-2",
+                "content": "2. الله قال للعقل: أقبل.",
+                "entity": {
+                    "Reasoning": "In this sentence, 'الله' is a divine individual, and 'العقل' is treated as an agent addressed by God, so both are individuals. The verb 'قال' represents the act of saying, which is nominalized as 'قول'. 'أقبل' is an imperative representing the act of approaching, which we nominalize as 'إقبال'.",
+                    "Individual": [
+                        "الله",
+                        "العقل"
+                    ],
+                    "Event": [
+                        "قول",
+                        "إقبال"
+                    ],
+                    "quality": [],
+                    "substance": []
+                }
+            }            
+        ]
+    }
+}
