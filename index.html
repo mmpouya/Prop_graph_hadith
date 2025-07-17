@@ -502,6 +502,11 @@
             </label>
         </div>
 
+        <div id="hadithSelectorContainer" style="display:none; margin-bottom:1rem;">
+            <label for="hadithSelector">انتخاب حدیث:</label>
+            <select id="hadithSelector"></select>
+        </div>
+
         <div id="hadithDisplay">
             <!-- Content will be dynamically inserted here -->
         </div>
@@ -529,7 +534,8 @@
         </div>
     </div>
     <script>
-        let hadith = null;
+        let hadiths = [];
+        let selectedHadithIndex = 0;
         let uploadedFileName = "";
         function showToast(title, message, type = 'success') {
             const toastContainer = document.getElementById('toastContainer');
@@ -555,11 +561,14 @@
             reader.onload = function(e) {
                 try {
                     const raw = JSON.parse(e.target.result);
-                    if (!raw || typeof raw !== 'object') {
-                        showToast('خطا', 'ساختار فایل JSON معتبر نیست.', 'error');
+                    if (!Array.isArray(raw) || raw.length === 0) {
+                        showToast('خطا', 'ساختار فایل JSON باید آرایه‌ای از احادیث باشد.', 'error');
                         return;
                     }
-                    hadith = raw;
+                    hadiths = raw;
+                    selectedHadithIndex = 0;
+                    populateHadithSelector();
+                    document.getElementById('hadithSelectorContainer').style.display = 'block';
                 } catch (error) {
                     showToast('خطا', 'خطا در پردازش فایل JSON. لطفاً یک فایل معتبر انتخاب کنید.', 'error');
                     return;
@@ -569,7 +578,26 @@
             };
             reader.readAsText(file);
         });
+        function populateHadithSelector() {
+            const selector = document.getElementById('hadithSelector');
+            selector.innerHTML = '';
+            hadiths.forEach((h, i) => {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = h.vol_tiltle ? `${i+1}: ${h.vol_tiltle}` : `حدیث ${i+1}`;
+                selector.appendChild(option);
+            });
+            selector.value = selectedHadithIndex;
+            selector.onchange = function() {
+                selectedHadithIndex = parseInt(this.value, 10);
+                displayHadith();
+            };
+        }
+        function getCurrentHadith() {
+            return hadiths[selectedHadithIndex] || null;
+        }
         function displayHadith() {
+            const hadith = getCurrentHadith();
             const hadithContainer = document.getElementById('hadithDisplay');
             hadithContainer.innerHTML = '';
             if (!hadith) return;
@@ -685,6 +713,7 @@
             }
         }
         function addProposition() {
+            const hadith = getCurrentHadith();
             const input = document.getElementById('newPropContent');
             const value = input.value.trim();
             if (!value) return;
@@ -695,12 +724,13 @@
                 const n = parseInt((p.id||'').split('-').pop());
                 if (!isNaN(n) && n > maxId) maxId = n;
             });
-            const newId = (hadith.hadith_propositions.length > 0 ? hadith.hadith_propositions[0].id.split('-')[0] : '1') + '-' + (maxId+1);
+            const newId = (hadith.hadith_propositions.length > 0 ? hadith.hadith_propositions[0].id.split('-')[0] : (selectedHadithIndex+1)) + '-' + (maxId+1);
             hadith.hadith_propositions.push({ id: newId, content: value });
             input.value = '';
             displayHadith();
         }
         function addGraphRelation() {
+            const hadith = getCurrentHadith();
             const source = document.getElementById('newGraphSource').value.trim();
             const target = document.getElementById('newGraphTarget').value.trim();
             const type = document.getElementById('newGraphType').value.trim();
@@ -713,9 +743,9 @@
             displayHadith();
         }
         function downloadHadith() {
-            if (!hadith) return;
+            if (!hadiths.length) return;
             let outputFileName = uploadedFileName + '_edited.json';
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(hadith, null, 2));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(hadiths, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
             downloadAnchor.setAttribute("download", outputFileName);
@@ -747,8 +777,6 @@
                 document.body.classList.add('dark-mode');
                 document.getElementById('darkModeToggle').textContent = '☀️ حالت روز';
             }
-            // Load default data
-            fetch('new_sample.json').then(r=>r.json()).then(data=>{ hadith=data; displayHadith(); });
         }
     </script>
     <script>
