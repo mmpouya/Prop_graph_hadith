@@ -16,6 +16,8 @@
         
         <!-- سایر لینک‌ها و استایل‌های سایت -->
     <link rel="stylesheet" href="styles.css">
+    <!-- vis-network for graph visualization -->
+    <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700&display=swap');
         
@@ -486,46 +488,62 @@
 </head>
 <body>
     <div class="container">
-        <h2>سوالات احادیث</h2>
-        <button id="darkModeToggle" class="button button-secondary" 
-            data-light="☀️ حالت روز" 
-            data-dark="🌙 حالت شب">
-            🌙 حالت شب
-        </button>
-
-        <div class="toast-container" id="toastContainer"></div>
-
+        <!-- Step-by-step guide -->
+        <div class="step-guide" style="background:#e3f2fd; color:#1565c0; border-radius:10px; padding:1rem 1.5rem; margin-bottom:1.5rem; font-size:1.05rem;">
+            <strong>راهنمای مراحل:</strong>
+            <ol style="margin:0; padding-right:1.2rem;">
+                <li>ابتدا فایل JSON احادیث را بارگذاری کنید.</li>
+                <li>حدیث مورد نظر را از لیست انتخاب نمایید.</li>
+                <li>گزاره‌ها و روابط را ویرایش یا اضافه کنید.</li>
+                <li>در پایان، فایل ویرایش‌شده را ذخیره و دانلود نمایید.</li>
+            </ol>
+        </div>
+        <!-- File Upload Section -->
+        <h3 style="color:var(--primary-color); margin-bottom:0.5rem;">۱. بارگذاری فایل احادیث</h3>
         <div class="file-upload">
             <label class="file-upload-label">
                 <span>📁 انتخاب فایل JSON</span>
                 <input type="file" id="jsonFile" accept="application/json">
             </label>
         </div>
-
+        <!-- Hadith Selector Section -->
         <div id="hadithSelectorContainer" style="display:none; margin-bottom:1rem;">
+            <h3 style="color:var(--primary-color); margin-bottom:0.5rem;">۲. انتخاب حدیث</h3>
             <label for="hadithSelector">انتخاب حدیث:</label>
             <select id="hadithSelector"></select>
         </div>
-
+        <!-- Hadith Display Section -->
+        <h3 style="color:var(--primary-color); margin-bottom:0.5rem;">۳. نمایش و ویرایش حدیث</h3>
         <div id="hadithDisplay">
             <!-- Content will be dynamically inserted here -->
         </div>
+        <!-- Propositions Section -->
+        <h3 style="color:var(--primary-color); margin-bottom:0.5rem; display:flex; align-items:center; gap:8px;">
+            ۴. افزودن گزاره جدید
+            <span title="گزاره، جمله یا عبارت کلیدی استخراج‌شده از حدیث است." style="cursor:help; font-size:1.2rem; color:#00acc1;">ℹ️</span>
+        </h3>
         <div class="input-container">
-            <input type="text" id="newPropContent" placeholder="متن گزاره جدید را وارد کنید" class="text-input">
+            <input type="text" id="newPropContent" placeholder="مثال: پیامبر (ص) فرمود..." class="text-input">
             <button class="button button-primary" onclick="addProposition()">
                 <span>➕</span>
                 <span>افزودن گزاره</span>
             </button>
         </div>
+        <!-- Relations Section -->
+        <h3 style="color:var(--primary-color); margin-bottom:0.5rem; display:flex; align-items:center; gap:8px;">
+            ۵. افزودن رابطه بین گزاره‌ها
+            <span title="رابطه، ارتباط معنایی یا زمانی بین دو گزاره است (مثلاً: ترتیبی، علّی، توضیحی)." style="cursor:help; font-size:1.2rem; color:#00acc1;">ℹ️</span>
+        </h3>
         <div class="input-container">
-            <input type="text" id="newGraphSource" placeholder="ID گزاره مبدا" class="text-input">
-            <input type="text" id="newGraphTarget" placeholder="ID گزاره مقصد" class="text-input">
-            <input type="text" id="newGraphType" placeholder="نوع رابطه (مثلاً temporal)" class="text-input">
+            <input type="text" id="newGraphSource" placeholder="مثال: 1-1 (ID گزاره مبدا)" class="text-input">
+            <input type="text" id="newGraphTarget" placeholder="مثال: 1-2 (ID گزاره مقصد)" class="text-input">
+            <input type="text" id="newGraphType" placeholder="مثال: temporal (نوع رابطه)" class="text-input">
             <button class="button button-secondary" onclick="addGraphRelation()">
                 <span>➕</span>
                 <span>افزودن رابطه</span>
             </button>
         </div>
+        <!-- Actions Section -->
         <div class="buttons">
             <button id="saveBtn" class="button button-primary" onclick="downloadHadith()">
                 <span>💾</span>
@@ -538,7 +556,13 @@
         let selectedHadithIndex = 0;
         let uploadedFileName = "";
         function showToast(title, message, type = 'success') {
-            const toastContainer = document.getElementById('toastContainer');
+            let toastContainer = document.getElementById('toastContainer');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toastContainer';
+                toastContainer.className = 'toast-container';
+                document.body.appendChild(toastContainer);
+            }
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             const icons = { success: '✅', error: '❌', warning: '⚠️' };
@@ -567,14 +591,15 @@
                     }
                     hadiths = raw;
                     selectedHadithIndex = 0;
+                    console.log('Loaded hadiths:', hadiths);
                     populateHadithSelector();
                     document.getElementById('hadithSelectorContainer').style.display = 'block';
+                    showToast('موفقیت', 'فایل با موفقیت بارگذاری شد!', 'success');
+                    displayHadith(); // Only call here, after everything is set
                 } catch (error) {
                     showToast('خطا', 'خطا در پردازش فایل JSON. لطفاً یک فایل معتبر انتخاب کنید.', 'error');
                     return;
                 }
-                showToast('موفقیت', 'فایل با موفقیت بارگذاری شد!', 'success');
-                displayHadith();
             };
             reader.readAsText(file);
         });
@@ -597,119 +622,193 @@
             return hadiths[selectedHadithIndex] || null;
         }
         function displayHadith() {
-            const hadith = getCurrentHadith();
-            const hadithContainer = document.getElementById('hadithDisplay');
-            hadithContainer.innerHTML = '';
-            if (!hadith) return;
-            // Content
-            const contentSection = document.createElement('div');
-            contentSection.className = 'hadith-content';
-            const persianContent = document.createElement('div');
-            persianContent.className = 'hadith-persian';
-            persianContent.textContent = hadith.content;
-            contentSection.appendChild(persianContent);
-            const arabicContent = document.createElement('div');
-            arabicContent.className = 'hadith-arabic';
-            arabicContent.textContent = hadith.content_ar;
-            contentSection.appendChild(arabicContent);
-            hadithContainer.appendChild(contentSection);
-            // Propositions
-            if (Array.isArray(hadith.hadith_propositions)) {
-                const propSection = document.createElement('div');
-                propSection.className = 'propositions-section';
-                hadith.hadith_propositions.forEach((prop, idx) => {
-                    const propCard = document.createElement('div');
-                    propCard.className = 'proposition-card';
-                    const propHeader = document.createElement('div');
-                    propHeader.className = 'proposition-header';
-                    const propId = document.createElement('span');
-                    propId.style.color = '#888';
-                    propId.textContent = `ID: ${prop.id}`;
-                    const propContent = document.createElement('span');
-                    propContent.className = 'proposition-content';
-                    propContent.textContent = prop.content;
-                    // Edit button
-                    const editButton = document.createElement('button');
-                    editButton.className = 'edit-button';
-                    editButton.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>';
-                    editButton.onclick = function() {
-                        const input = document.createElement('input');
-                        input.type = 'text';
-                        input.className = 'edit-input';
-                        input.value = prop.content;
-                        const saveButton = document.createElement('button');
-                        saveButton.className = 'save-edit';
-                        saveButton.innerHTML = 'ذخیره';
-                        saveButton.onclick = function() {
-                            prop.content = input.value;
+            try {
+                const hadith = getCurrentHadith();
+                console.log('Displaying hadith at index', selectedHadithIndex, ':', hadith);
+                const hadithContainer = document.getElementById('hadithDisplay');
+                hadithContainer.innerHTML = '';
+                if (!hadith) {
+                    hadithContainer.innerHTML = '<div style="color:#f44336;">هیچ حدیثی برای نمایش وجود ندارد.</div>';
+                    return;
+                }
+                // Content
+                const contentSection = document.createElement('div');
+                contentSection.className = 'hadith-content';
+                const persianContent = document.createElement('div');
+                persianContent.className = 'hadith-persian';
+                persianContent.textContent = hadith.content || '(متن فارسی موجود نیست)';
+                contentSection.appendChild(persianContent);
+                const arabicContent = document.createElement('div');
+                arabicContent.className = 'hadith-arabic';
+                arabicContent.textContent = hadith.content_ar || '';
+                contentSection.appendChild(arabicContent);
+                hadithContainer.appendChild(contentSection);
+                // Propositions
+                if (Array.isArray(hadith.hadith_propositions) && hadith.hadith_propositions.length > 0) {
+                    const propSection = document.createElement('div');
+                    propSection.className = 'propositions-section';
+                    hadith.hadith_propositions.forEach((prop, idx) => {
+                        const propCard = document.createElement('div');
+                        propCard.className = 'proposition-card';
+                        propCard.style.border = '2px solid #1e88e5';
+                        propCard.style.background = '#e3f2fd';
+                        propCard.style.marginBottom = '1rem';
+                        propCard.style.position = 'relative';
+                        const propHeader = document.createElement('div');
+                        propHeader.className = 'proposition-header';
+                        const propId = document.createElement('span');
+                        propId.style.color = '#888';
+                        propId.textContent = `ID: ${prop.id}`;
+                        const propContent = document.createElement('span');
+                        propContent.className = 'proposition-content';
+                        propContent.textContent = prop.content;
+                        // Status badge (example: new, edited)
+                        let showBadge = false;
+                        let badgeText = '';
+                        if (typeof prop._edited !== 'undefined' && prop._edited) {
+                            showBadge = true;
+                            badgeText = 'ویرایش‌شده';
+                        } else if (typeof prop._new !== 'undefined' && prop._new) {
+                            showBadge = true;
+                            badgeText = 'جدید';
+                        }
+                        if (showBadge) {
+                            const statusBadge = document.createElement('span');
+                            statusBadge.className = 'status-badge';
+                            statusBadge.style.background = '#4caf50';
+                            statusBadge.style.color = 'white';
+                            statusBadge.style.fontSize = '0.8rem';
+                            statusBadge.style.borderRadius = '6px';
+                            statusBadge.style.padding = '2px 8px';
+                            statusBadge.style.marginRight = '8px';
+                            statusBadge.textContent = badgeText;
+                            propHeader.appendChild(statusBadge);
+                        }
+                        // Edit button
+                        const editButton = document.createElement('button');
+                        editButton.className = 'edit-button';
+                        editButton.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>';
+                        editButton.onclick = function() {
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.className = 'edit-input';
+                            input.value = prop.content;
+                            const saveButton = document.createElement('button');
+                            saveButton.className = 'save-edit';
+                            saveButton.innerHTML = 'ذخیره';
+                            saveButton.onclick = function() {
+                                prop.content = input.value;
+                                displayHadith();
+                            };
+                            const cancelButton = document.createElement('button');
+                            cancelButton.className = 'cancel-edit';
+                            cancelButton.innerHTML = 'انصراف';
+                            cancelButton.onclick = function() { displayHadith(); };
+                            input.addEventListener('keydown', function(event) {
+                                if (event.key === 'Enter') { event.preventDefault(); saveButton.click(); }
+                                else if (event.key === 'Escape') { event.preventDefault(); cancelButton.click(); }
+                            });
+                            propHeader.innerHTML = '';
+                            propHeader.appendChild(propId);
+                            propHeader.appendChild(input);
+                            propHeader.appendChild(saveButton);
+                            propHeader.appendChild(cancelButton);
+                            input.focus();
+                        };
+                        // Delete button
+                        const deleteButton = document.createElement('button');
+                        deleteButton.className = 'edit-button';
+                        deleteButton.innerHTML = '🗑️';
+                        deleteButton.onclick = function() {
+                            hadith.hadith_propositions.splice(idx, 1);
                             displayHadith();
                         };
-                        const cancelButton = document.createElement('button');
-                        cancelButton.className = 'cancel-edit';
-                        cancelButton.innerHTML = 'انصراف';
-                        cancelButton.onclick = function() { displayHadith(); };
-                        input.addEventListener('keydown', function(event) {
-                            if (event.key === 'Enter') { event.preventDefault(); saveButton.click(); }
-                            else if (event.key === 'Escape') { event.preventDefault(); cancelButton.click(); }
-                        });
-                        propHeader.innerHTML = '';
                         propHeader.appendChild(propId);
-                        propHeader.appendChild(input);
-                        propHeader.appendChild(saveButton);
-                        propHeader.appendChild(cancelButton);
-                        input.focus();
-                    };
-                    // Delete button
-                    const deleteButton = document.createElement('button');
-                    deleteButton.className = 'edit-button';
-                    deleteButton.innerHTML = '🗑️';
-                    deleteButton.onclick = function() {
-                        hadith.hadith_propositions.splice(idx, 1);
-                        displayHadith();
-                    };
-                    propHeader.appendChild(propId);
-                    propHeader.appendChild(propContent);
-                    propHeader.appendChild(editButton);
-                    propHeader.appendChild(deleteButton);
-                    propCard.appendChild(propHeader);
-                    propSection.appendChild(propCard);
-                });
-                hadithContainer.appendChild(propSection);
-            }
-            // Propgraph
-            if (Array.isArray(hadith.hadith_propgraph)) {
-                const graphSection = document.createElement('div');
-                graphSection.className = 'propositions-section';
-                const title = document.createElement('h3');
-                title.textContent = 'روابط گزاره‌ها (Propgraph)';
-                graphSection.appendChild(title);
-                const table = document.createElement('table');
-                table.style.width = '100%';
-                table.style.background = '#fff';
-                table.style.color = '#333';
-                table.style.borderRadius = '8px';
-                table.style.marginTop = '1rem';
-                const thead = document.createElement('thead');
-                thead.innerHTML = '<tr><th>مبدا</th><th>مقصد</th><th>نوع</th><th>حذف</th></tr>';
-                table.appendChild(thead);
-                const tbody = document.createElement('tbody');
-                hadith.hadith_propgraph.forEach((rel, idx) => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${rel.source}</td><td>${rel.target}</td><td>${rel.type}</td>`;
-                    const delTd = document.createElement('td');
-                    const delBtn = document.createElement('button');
-                    delBtn.textContent = '🗑️';
-                    delBtn.onclick = function() {
-                        hadith.hadith_propgraph.splice(idx, 1);
-                        displayHadith();
-                    };
-                    delTd.appendChild(delBtn);
-                    tr.appendChild(delTd);
-                    tbody.appendChild(tr);
-                });
-                table.appendChild(tbody);
-                graphSection.appendChild(table);
-                hadithContainer.appendChild(graphSection);
+                        propHeader.appendChild(propContent);
+                        propHeader.appendChild(editButton);
+                        propHeader.appendChild(deleteButton);
+                        propCard.appendChild(propHeader);
+                        propSection.appendChild(propCard);
+                    });
+                    hadithContainer.appendChild(propSection);
+                } else {
+                    hadithContainer.innerHTML += '<div style="color:#888; margin-top:1rem;">هیچ گزاره‌ای ثبت نشده است.</div>';
+                }
+                // Propgraph
+                if (Array.isArray(hadith.hadith_propgraph) && hadith.hadith_propgraph.length > 0) {
+                    const graphSection = document.createElement('div');
+                    graphSection.className = 'propositions-section';
+                    const title = document.createElement('h3');
+                    title.textContent = 'روابط گزاره‌ها (Propgraph)';
+                    graphSection.appendChild(title);
+                    // Visual graph placeholder
+                    const graphPlaceholder = document.createElement('div');
+                    graphPlaceholder.id = 'propgraph-visual';
+                    graphPlaceholder.style.height = '320px';
+                    graphPlaceholder.style.background = '#f0f4c3';
+                    graphPlaceholder.style.border = '1.5px dashed #bdb76b';
+                    graphPlaceholder.style.borderRadius = '8px';
+                    graphPlaceholder.style.display = 'flex';
+                    graphPlaceholder.style.alignItems = 'center';
+                    graphPlaceholder.style.justifyContent = 'center';
+                    graphPlaceholder.style.margin = '1rem 0';
+                    graphSection.appendChild(graphPlaceholder);
+                    // Render vis-network graph
+                    setTimeout(() => {
+                        if (window.vis && hadith.hadith_propositions && hadith.hadith_propgraph) {
+                            const nodes = hadith.hadith_propositions.map(p => ({ id: p.id, label: p.content }));
+                            const edges = hadith.hadith_propgraph.map(r => ({ from: r.source, to: r.target, label: r.type }));
+                            const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+                            const options = {
+                                nodes: { shape: 'box', font: { align: 'right', size: 16 } },
+                                edges: { arrows: 'to', font: { align: 'middle', size: 14 } },
+                                layout: { hierarchical: false },
+                                physics: { enabled: true }
+                            };
+                            new vis.Network(graphPlaceholder, data, options);
+                        } else {
+                            graphPlaceholder.innerHTML = '<span style="color:#bdb76b;">(کتابخانه گراف بارگذاری نشد)</span>';
+                        }
+                    }, 0);
+                    const table = document.createElement('table');
+                    table.style.width = '100%';
+                    table.style.background = '#fff';
+                    table.style.color = '#333';
+                    table.style.borderRadius = '8px';
+                    table.style.marginTop = '1rem';
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = '<tr>' +
+                        '<th title="ID گزاره مبدا">مبدا</th>' +
+                        '<th title="ID گزاره مقصد">مقصد</th>' +
+                        '<th title="نوع رابطه (مثلاً temporal, causal)">نوع</th>' +
+                        '<th title="حذف رابطه">حذف</th>' +
+                        '</tr>';
+                    table.appendChild(thead);
+                    const tbody = document.createElement('tbody');
+                    hadith.hadith_propgraph.forEach((rel, idx) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${rel.source}</td><td>${rel.target}</td><td>${rel.type}</td>`;
+                        const delTd = document.createElement('td');
+                        const delBtn = document.createElement('button');
+                        delBtn.textContent = '🗑️';
+                        delBtn.onclick = function() {
+                            hadith.hadith_propgraph.splice(idx, 1);
+                            displayHadith();
+                        };
+                        delTd.appendChild(delBtn);
+                        tr.appendChild(delTd);
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+                    graphSection.appendChild(table);
+                    hadithContainer.appendChild(graphSection);
+                } else {
+                    hadithContainer.innerHTML += '<div style="color:#888; margin-top:1rem;">هیچ رابطه‌ای ثبت نشده است.</div>';
+                }
+            } catch (err) {
+                console.error('Error in displayHadith:', err);
+                const hadithContainer = document.getElementById('hadithDisplay');
+                hadithContainer.innerHTML = '<div style="color:#f44336;">خطا در نمایش داده‌ها. لطفاً فایل را بررسی کنید یا با پشتیبانی تماس بگیرید.</div>';
             }
         }
         function addProposition() {
@@ -779,12 +878,6 @@
             }
         }
     </script>
-    <script>
-        if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/service-worker.js")
-                .then(() => console.log("✅ Service Worker ثبت شد و سایت آماده نصب است!"))
-                .catch((error) => console.log("❌ خطا در ثبت Service Worker:", error));
-        }
-    </script>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </body>
 </html>
