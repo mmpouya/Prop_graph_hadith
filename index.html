@@ -231,7 +231,9 @@
             hadiths.forEach((h, i) => {
                 const option = document.createElement('option');
                 option.value = i;
-                option.textContent = h.vol_tiltle ? `${i+1}: ${h.vol_tiltle}` : `حدیث ${i+1}`;
+                // Use hadith_num if present, otherwise fallback to i+1
+                const num = (typeof h.hadith_num !== 'undefined' && h.hadith_num !== null && h.hadith_num !== '') ? h.hadith_num : (i+1);
+                option.textContent = h.vol_tiltle ? `${num}: ${h.vol_tiltle}` : `حدیث ${num}`;
                 selector.appendChild(option);
             });
             selector.value = selectedHadithIndex;
@@ -330,6 +332,7 @@
                     propSection.className = 'propositions-section';
                     // Table header for propositions
                     const propTable = document.createElement('table');
+                    propTable.className = 'propositions-table';
                     propTable.style.width = '100%';
                     propTable.style.background = '#fff';
                     propTable.style.color = '#333';
@@ -496,6 +499,7 @@
                         graphPlaceholder.innerHTML = '<span style="color:#bdb76b;">(کتابخانه گراف بارگذاری نشد)</span>';
                     }
                     const table = document.createElement('table');
+                    table.className = 'relations-table';
                     table.style.width = '100%';
                     table.style.background = '#fff';
                     table.style.color = '#333';
@@ -684,6 +688,7 @@
                 event.preventDefault();
             }
         });
+        document.getElementById('addRelationBtn').addEventListener('click', addGraphRelation);
         // Overlay file input
         document.getElementById('jsonFileOverlay').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -719,6 +724,13 @@
         window.addEventListener('DOMContentLoaded', function() {
             setUIEnabled(false);
             document.getElementById('fileUploadOverlay').style.display = 'flex';
+            // Fix: Add event listeners for top navigation buttons
+            document.getElementById('prevHadithBtn').addEventListener('click', function() {
+                navigateHadith(-1);
+            });
+            document.getElementById('nextHadithBtn').addEventListener('click', function() {
+                navigateHadith(1);
+            });
         });
         document.getElementById('darkModeToggle').addEventListener('click', function() {
             document.body.classList.toggle('dark-mode');

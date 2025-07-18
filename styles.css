@@ -431,7 +431,7 @@ input[type="checkbox"] {
     direction: rtl;
     font-size: 0.95rem;
     transition: all 0.3s ease;
-    width: 200px;
+    width: 390px;
 }
 
 .edit-input:focus {
@@ -706,4 +706,14 @@ input[type="checkbox"] {
 .disabled-ui {
     opacity: 0.5;
     pointer-events: none;
+}
+
+/* Proposition editing input size */
+.propositions-table .edit-input {
+  width: 390px;
+}
+
+/* Relation editing input size */
+.relations-table .edit-input {
+  width: 150px;
 }
