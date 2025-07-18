@@ -483,8 +483,29 @@
                         const edges = hadith.hadith_propgraph.map(r => ({ from: r.source, to: r.target, label: r.type }));
                         const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
                         const options = {
-                            nodes: { shape: 'box', font: { align: 'right', size: 16 } },
-                            edges: { arrows: 'to', font: { align: 'middle', size: 16 } },
+                            nodes: {
+                                shape: 'box',
+                                font: {
+                                    align: 'right',
+                                    size: 16,
+                                    face: 'Vazirmatn', // Change to your desired font
+                                    color: '#333', // Optional: change font color
+                                    bold: {
+                                        color: '#1565c0',
+                                        size: 18,
+                                        face: 'sans-serif'
+                                    }
+                                }
+                            },
+                            edges: {
+                                arrows: 'to',
+                                font: {
+                                    align: 'middle',
+                                    size: 16,
+                                    face: 'Vazirmatn', // Change to your desired font
+                                    color: '#1e88e5'
+                                }
+                            },
                             layout: { hierarchical: false },
                             physics: {
                                 enabled: true,
