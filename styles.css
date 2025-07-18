@@ -717,3 +717,65 @@ input[type="checkbox"] {
 .relations-table .edit-input {
   width: 150px;
 }
+
+/* Beautiful navigation buttons */
+.nav-buttons.beautiful-nav {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    align-items: center;
+}
+.beautiful-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(90deg, #42a5f5 0%, #1e88e5 100%);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.7rem 2.2rem;
+    font-size: 1.15rem;
+    font-weight: 500;
+    box-shadow: 0 2px 12px rgba(30,136,229,0.10);
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+    outline: none;
+    min-width: 120px;
+}
+.beautiful-nav-btn .nav-icon {
+    font-size: 1.3em;
+    display: flex;
+    align-items: center;
+}
+.beautiful-nav-btn:disabled {
+    background: #b0bec5;
+    color: #ececec;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+.beautiful-nav-btn:hover:not(:disabled),
+.beautiful-nav-btn:focus:not(:disabled) {
+    background: linear-gradient(90deg, #1976d2 0%, #1565c0 100%);
+    box-shadow: 0 4px 16px rgba(30,136,229,0.18);
+    transform: translateY(-2px) scale(1.04);
+}
+.beautiful-nav-btn:active:not(:disabled) {
+    background: linear-gradient(90deg, #1565c0 0%, #1976d2 100%);
+    box-shadow: 0 2px 8px rgba(30,136,229,0.12);
+    transform: scale(0.98);
+}
+/* Dark mode support */
+body.dark-mode .beautiful-nav-btn {
+    background: linear-gradient(90deg, #263859 0%, #1e2a3a 100%);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(30,136,229,0.18);
+}
+body.dark-mode .beautiful-nav-btn:disabled {
+    background: #374151;
+    color: #b0bec5;
+}
+body.dark-mode .beautiful-nav-btn:hover:not(:disabled),
+body.dark-mode .beautiful-nav-btn:focus:not(:disabled) {
+    background: linear-gradient(90deg, #1e88e5 0%, #42a5f5 100%);
+    color: #fff;
+}

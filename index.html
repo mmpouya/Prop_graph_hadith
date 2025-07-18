@@ -62,9 +62,15 @@
             </label>
         </div>
         <!-- Navigation Buttons (Top) -->
-        <div id="navButtonsTop" class="buttons" style="justify-content:center; margin-bottom:0.5rem;">
-            <button id="prevHadithBtn" class="button-nav" style="min-width:100px;">قبلی</button>
-            <button id="nextHadithBtn" class="button-nav" style="min-width:100px;">بعدی</button>
+        <div id="navButtonsTop" class="nav-buttons beautiful-nav" style="justify-content:center; margin-bottom:0.5rem;">
+            <button id="prevHadithBtn" class="button-nav beautiful-nav-btn">
+                <span class="nav-icon">&#8592;</span>
+                <span>قبلی</span>
+            </button>
+            <button id="nextHadithBtn" class="button-nav beautiful-nav-btn">
+                <span>بعدی</span>
+                <span class="nav-icon">&#8594;</span>
+            </button>
         </div>
         <!-- Hadith Selector Section -->
         <div id="hadithSelectorContainer" style="display:none; margin-bottom:1rem;align-items:center;gap:1rem;">
@@ -119,9 +125,15 @@
             </button>
         </div>
         <!-- Navigation Buttons (Bottom) -->
-        <div id="navButtonsBottom" class="buttons" style="justify-content:center; margin-top:0.5rem;">
-            <button id="backBtnBottom" class="button button-secondary" style="min-width:100px;" onclick="navigateHadith(-1)">قبلی</button>
-            <button id="nextBtnBottom" class="button button-secondary" style="min-width:100px;" onclick="navigateHadith(1)">بعدی</button>
+        <div id="navButtonsBottom" class="nav-buttons beautiful-nav" style="justify-content:center; margin-top:0.5rem;">
+            <button id="backBtnBottom" class="button button-secondary beautiful-nav-btn" style="min-width:100px;" onclick="navigateHadith(-1)">
+                <span class="nav-icon">&#8592;</span>
+                <span>قبلی</span>
+            </button>
+            <button id="nextBtnBottom" class="button button-secondary beautiful-nav-btn" style="min-width:100px;" onclick="navigateHadith(1)">
+                <span>بعدی</span>
+                <span class="nav-icon">&#8594;</span>
+            </button>
         </div>
     </div>
     <script src="libs/vis-network.min.js"></script>
@@ -210,8 +222,8 @@
             updateNavButtons();
         }
         function updateNavButtons() {
-            const backBtnTop = document.getElementById('backBtnTop');
-            const nextBtnTop = document.getElementById('nextBtnTop');
+            const backBtnTop = document.getElementById('prevHadithBtn');
+            const nextBtnTop = document.getElementById('nextHadithBtn');
             const backBtnBottom = document.getElementById('backBtnBottom');
             const nextBtnBottom = document.getElementById('nextBtnBottom');
             if (!hadiths.length) {
@@ -472,16 +484,16 @@
                         const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
                         const options = {
                             nodes: { shape: 'box', font: { align: 'right', size: 16 } },
-                            edges: { arrows: 'to', font: { align: 'middle', size: 14 } },
+                            edges: { arrows: 'to', font: { align: 'middle', size: 16 } },
                             layout: { hierarchical: false },
                             physics: {
                                 enabled: true,
                                 solver: 'repulsion',
                                 repulsion: {
-                                    nodeDistance: 50, // higher = more distance between nodes
-                                    centralGravity: 0.1,
-                                    springLength: 100,
-                                    springConstant: 0.01,
+                                    nodeDistance: 200, // higher = more distance between nodes
+                                    centralGravity: 0.05,
+                                    springLength: 200,
+                                    springConstant: 0.05,
                                     damping: 0.09
                                 }
                             }
