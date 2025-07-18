@@ -91,6 +91,7 @@
         </h3>
         <div class="input-container">
             <input type="text" id="newPropContent" placeholder="مثال: پیامبر (ص) فرمود..." class="text-input">
+            <input type="text" id="newPropType" placeholder="نوع گزاره (مثال: command, statement)" class="text-input" style="margin-right:8px;">
             <button id="addPropositionBtn" class="button button-primary">
                 <span>➕</span>
                 <span>افزودن گزاره</span>
@@ -327,95 +328,100 @@
                 if (Array.isArray(hadith.hadith_propositions) && hadith.hadith_propositions.length > 0) {
                     const propSection = document.createElement('div');
                     propSection.className = 'propositions-section';
+                    // Table header for propositions
+                    const propTable = document.createElement('table');
+                    propTable.style.width = '100%';
+                    propTable.style.background = '#fff';
+                    propTable.style.color = '#333';
+                    propTable.style.borderRadius = '8px';
+                    propTable.style.marginBottom = '1rem';
+                    const propThead = document.createElement('thead');
+                    propThead.innerHTML = '<tr>' +
+                        '<th>ID</th>' +
+                        '<th>متن گزاره</th>' +
+                        '<th>نوع</th>' +
+                        '<th>انتخاب</th>' +
+                        '<th>ویرایش</th>' +
+                        '</tr>';
+                    propTable.appendChild(propThead);
+                    const propTbody = document.createElement('tbody');
                     hadith.hadith_propositions.forEach((prop, idx) => {
-                        const propCard = document.createElement('div');
-                        propCard.className = 'proposition-card';
-                        propCard.style.border = '2px solid #1e88e5';
-                        propCard.style.background = '#e3f2fd';
-                        propCard.style.marginBottom = '1rem';
-                        propCard.style.position = 'relative';
-                        const propHeader = document.createElement('div');
-                        propHeader.className = 'proposition-header';
-                        const propId = document.createElement('span');
-                        propId.className = 'prop-id-distinct';
-                        propId.textContent = prop.id;
-                        const separator = document.createElement('span');
-                        separator.textContent = '|';
-                        separator.style.margin = '0 8px';
-                        separator.style.color = '#bbb';
-                        const propContent = document.createElement('span');
-                        propContent.className = 'proposition-content';
-                        propContent.textContent = prop.content;
-                        // Status badge (example: new, edited)
-                        let showBadge = false;
-                        let badgeText = '';
-                        if (typeof prop._edited !== 'undefined' && prop._edited) {
-                            showBadge = true;
-                            badgeText = 'ویرایش‌شده';
-                        } else if (typeof prop._new !== 'undefined' && prop._new) {
-                            showBadge = true;
-                            badgeText = 'جدید';
-                        }
-                        if (showBadge) {
-                            const statusBadge = document.createElement('span');
-                            statusBadge.className = 'status-badge';
-                            statusBadge.style.background = '#4caf50';
-                            statusBadge.style.color = 'white';
-                            statusBadge.style.fontSize = '0.8rem';
-                            statusBadge.style.borderRadius = '6px';
-                            statusBadge.style.padding = '2px 8px';
-                            statusBadge.style.marginRight = '8px';
-                            statusBadge.textContent = badgeText;
-                            propHeader.appendChild(statusBadge);
-                        }
-                        // Edit button
-                        const editButton = document.createElement('button');
-                        editButton.className = 'edit-button';
-                        editButton.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>';
-                        editButton.onclick = function() {
-                            const input = document.createElement('input');
-                            input.type = 'text';
-                            input.className = 'edit-input';
-                            input.value = prop.content;
-                            const saveButton = document.createElement('button');
-                            saveButton.className = 'save-edit';
-                            saveButton.innerHTML = 'ذخیره';
-                            saveButton.onclick = function() {
-                                prop.content = input.value;
+                        const tr = document.createElement('tr');
+                        if (prop._editing) {
+                            // Edit mode: show inputs for content and type
+                            const tdId = document.createElement('td');
+                            tdId.textContent = prop.id;
+                            tr.appendChild(tdId);
+                            const tdContent = document.createElement('td');
+                            const inputContent = document.createElement('input');
+                            inputContent.type = 'text';
+                            inputContent.value = prop.content;
+                            inputContent.className = 'edit-input';
+                            tdContent.appendChild(inputContent);
+                            tr.appendChild(tdContent);
+                            const tdType = document.createElement('td');
+                            const inputType = document.createElement('input');
+                            inputType.type = 'text';
+                            inputType.value = prop.type || '';
+                            inputType.className = 'edit-input';
+                            tdType.appendChild(inputType);
+                            tr.appendChild(tdType);
+                            // Checkbox
+                            const checkTd = document.createElement('td');
+                            const propCheckbox = document.createElement('input');
+                            propCheckbox.type = 'checkbox';
+                            propCheckbox.checked = (typeof prop._checked === 'undefined') ? true : prop._checked;
+                            propCheckbox.onchange = function() { prop._checked = this.checked; };
+                            checkTd.appendChild(propCheckbox);
+                            tr.appendChild(checkTd);
+                            // Save/Cancel buttons
+                            const tdActions = document.createElement('td');
+                            tdActions.className = 'edit-actions';
+                            const saveBtn = document.createElement('button');
+                            saveBtn.className = 'save-edit';
+                            saveBtn.textContent = 'ذخیره';
+                            saveBtn.onclick = function() {
+                                prop.content = inputContent.value;
+                                prop.type = inputType.value;
+                                delete prop._editing;
                                 displayHadith();
                             };
-                            const cancelButton = document.createElement('button');
-                            cancelButton.className = 'cancel-edit';
-                            cancelButton.innerHTML = 'انصراف';
-                            cancelButton.onclick = function() { displayHadith(); };
-                            input.addEventListener('keydown', function(event) {
-                                if (event.key === 'Enter') { event.preventDefault(); saveButton.click(); }
-                                else if (event.key === 'Escape') { event.preventDefault(); cancelButton.click(); }
-                            });
-                            propHeader.innerHTML = '';
-                            propHeader.appendChild(propId);
-                            propHeader.appendChild(separator);
-                            propHeader.appendChild(input);
-                            propHeader.appendChild(saveButton);
-                            propHeader.appendChild(cancelButton);
-                            input.focus();
-                        };
-                        // Delete button
-                        const checkbox = document.createElement('input');
-                        checkbox.type = 'checkbox';
-                        checkbox.style.marginLeft = '8px';
-                        checkbox.checked = (typeof prop._checked === 'undefined') ? true : prop._checked;
-                        checkbox.onchange = function() {
-                            prop._checked = this.checked;
-                        };
-                        propHeader.appendChild(checkbox);
-                        propHeader.appendChild(propId);
-                        propHeader.appendChild(separator);
-                        propHeader.appendChild(propContent);
-                        propHeader.appendChild(editButton);
-                        propCard.appendChild(propHeader);
-                        propSection.appendChild(propCard);
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.className = 'cancel-edit';
+                            cancelBtn.textContent = 'انصراف';
+                            cancelBtn.onclick = function() {
+                                delete prop._editing;
+                                displayHadith();
+                            };
+                            tdActions.appendChild(saveBtn);
+                            tdActions.appendChild(cancelBtn);
+                            tr.appendChild(tdActions);
+                        } else {
+                            tr.innerHTML = `<td>${prop.id}</td><td>${prop.content}</td><td>${prop.type || ''}</td>`;
+                            // Checkbox
+                            const checkTd = document.createElement('td');
+                            const propCheckbox = document.createElement('input');
+                            propCheckbox.type = 'checkbox';
+                            propCheckbox.checked = (typeof prop._checked === 'undefined') ? true : prop._checked;
+                            propCheckbox.onchange = function() { prop._checked = this.checked; };
+                            checkTd.appendChild(propCheckbox);
+                            tr.appendChild(checkTd);
+                            // Edit button
+                            const tdActions = document.createElement('td');
+                            const editBtn = document.createElement('button');
+                            editBtn.className = 'edit-button';
+                            editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>';
+                            editBtn.onclick = function() {
+                                prop._editing = true;
+                                displayHadith();
+                            };
+                            tdActions.appendChild(editBtn);
+                            tr.appendChild(tdActions);
+                        }
+                        propTbody.appendChild(tr);
                     });
+                    propTable.appendChild(propTbody);
+                    propSection.appendChild(propTable);
                     hadithContainer.appendChild(propSection);
                 } else {
                     hadithContainer.innerHTML += '<div style="color:#888; margin-top:1rem;">هیچ گزاره‌ای ثبت نشده است.</div>';
@@ -453,8 +459,12 @@
                     graphSection.appendChild(graphPlaceholder);
                     // Render vis-network graph
                     if (window.vis && hadith.hadith_propositions && hadith.hadith_propgraph) {
-                        // Show only ID as label, and set content as title for tooltip
-                        const nodes = hadith.hadith_propositions.map(p => ({ id: p.id, label: p.id, title: p.content }));
+                        // Show ID and type as label, and set content as title for tooltip
+                        const nodes = hadith.hadith_propositions.map(p => ({
+                            id: p.id,
+                            label: p.id + (p.type ? '-' + p.type : ''),
+                            title: p.content
+                        }));
                         const edges = hadith.hadith_propgraph.map(r => ({ from: r.source, to: r.target, label: r.type }));
                         const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
                         const options = {
@@ -607,8 +617,10 @@
         function addProposition() {
             const hadith = getCurrentHadith();
             const input = document.getElementById('newPropContent');
+            const typeInput = document.getElementById('newPropType');
             const value = input.value.trim();
-            if (!value) return;
+            const typeValue = typeInput.value.trim();
+            if (!value || !typeValue) return;
             if (!hadith.hadith_propositions) hadith.hadith_propositions = [];
             // Generate a new id
             let maxId = 0;
@@ -617,8 +629,9 @@
                 if (!isNaN(n) && n > maxId) maxId = n;
             });
             const newId = (hadith.hadith_propositions.length > 0 ? hadith.hadith_propositions[0].id.split('-')[0] : (selectedHadithIndex+1)) + '-' + (maxId+1);
-            hadith.hadith_propositions.push({ id: newId, content: value });
+            hadith.hadith_propositions.push({ id: newId, content: value, type: typeValue });
             input.value = '';
+            typeInput.value = '';
             displayHadith();
             populatePropDropdowns();
         }
@@ -658,15 +671,16 @@
             document.body.removeChild(downloadAnchor);
             showToast('موفقیت', 'فایل با موفقیت ذخیره شد!', 'success');
         }
+        document.getElementById('addPropositionBtn').addEventListener('click', addProposition);
         document.getElementById('newPropContent').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
                 addProposition();
                 event.preventDefault();
             }
         });
-        document.getElementById('newGraphType').addEventListener('keypress', function(event) {
+        document.getElementById('newPropType').addEventListener('keypress', function(event) {
             if (event.key === 'Enter') {
-                addGraphRelation();
+                addProposition();
                 event.preventDefault();
             }
         });
