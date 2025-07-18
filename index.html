@@ -686,20 +686,25 @@
             displayHadith();
         }
         function downloadHadith() {
-            if (!hadiths.length) return;
+            if (!hadiths || !Array.isArray(hadiths) || hadiths.length === 0) {
+                showToast('خطا', 'ابتدا باید یک فایل احادیث بارگذاری کنید.', 'error');
+                return;
+            }
+            // Deep copy hadiths to avoid mutating the original data
+            const hadithsToDownload = JSON.parse(JSON.stringify(hadiths));
             // For each hadith, filter propositions and relations by _checked
-            hadiths.forEach(h => {
+            hadithsToDownload.forEach(h => {
                 if (Array.isArray(h.hadith_propositions)) {
                     h.hadith_propositions = h.hadith_propositions.filter(p => (typeof p._checked === 'undefined') ? true : p._checked)
-                        .map(p => { const cp = { ...p }; delete cp._checked; return cp; });
+                        .map(p => { const cp = { ...p }; delete cp._checked; delete cp._editing; return cp; });
                 }
                 if (Array.isArray(h.hadith_propgraph)) {
                     h.hadith_propgraph = h.hadith_propgraph.filter(r => (typeof r._checked === 'undefined') ? true : r._checked)
-                        .map(r => { const cr = { ...r }; delete cr._checked; return cr; });
+                        .map(r => { const cr = { ...r }; delete cr._checked; delete cr._editing; return cr; });
                 }
             });
-            let outputFileName = uploadedFileName + '_edited.json';
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(hadiths, null, 2));
+            let outputFileName = uploadedFileName ? uploadedFileName.replace(/\.json$/i, '') + '_edited.json' : 'hadiths_edited.json';
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(hadithsToDownload, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
             downloadAnchor.setAttribute("download", outputFileName);
