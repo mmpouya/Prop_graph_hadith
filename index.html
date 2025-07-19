@@ -18,6 +18,9 @@
     <link rel="stylesheet" href="styles.css">
     <!-- vis-network for graph visualization -->
     <link href="libs/vis-network.min.css" rel="stylesheet" type="text/css" />
+    <!-- ECharts for TTL graph visualization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    <script src="https://unpkg.com/n3/browser/n3.min.js"></script>
 </head>
 <body>
     <!-- Overlay for file upload -->
@@ -136,11 +139,14 @@
             </button>
         </div>
     </div>
+    <!-- Notification area for TTL graph -->
+    <div id="notificationArea" style="position:fixed;top:30px;right:30px;z-index:9999;"></div>
     <script src="libs/vis-network.min.js"></script>
     <script>
         let hadiths = [];
         let selectedHadithIndex = 0;
         let uploadedFileName = "";
+        let ttlCharts = new Map(); // Store charts for each hadith
         function showToast(title, message, type = 'success') {
             let toastContainer = document.getElementById('toastContainer');
             if (!toastContainer) {
@@ -282,6 +288,9 @@
         }
         function displayHadith() {
             try {
+                // Clean up previous TTL charts
+                cleanupTTLCharts();
+                
                 const hadith = getCurrentHadith();
                 console.log('Displaying hadith at index', selectedHadithIndex, ':', hadith);
                 const hadithContainer = document.getElementById('hadithDisplay');
@@ -324,8 +333,24 @@
                 arabicSection.appendChild(arabicHeader);
                 arabicSection.appendChild(arabicContent);
                 hadithContainer.appendChild(arabicSection);
+                
+                // Collapsible English Content
+                const englishSection = document.createElement('div');
+                englishSection.style.marginBottom = '0.5rem';
+                const englishHeader = document.createElement('button');
+                englishHeader.className = 'collapsible-header';
+                englishHeader.style = 'width:100%; text-align:left; background:#f3e5f5; color:#7b1fa2; border:none; border-radius:8px; padding:0.7rem 1rem; font-size:1.1rem; margin-bottom:0.2rem; cursor:pointer; display:flex; align-items:center; gap:8px; direction:ltr;';
+                englishHeader.innerHTML = '<span>English Translation</span><span class="arrow">▼</span>';
+                const englishContent = document.createElement('div');
+                englishContent.className = 'collapsible-content';
+                englishContent.style = 'padding:1rem; background:var(--bg-color); border-radius:8px; font-size:1.1rem; line-height:1.8; color:#333; direction:ltr; text-align:left;';
+                englishContent.textContent = hadith.content_Eng || '(English translation not available)';
+                englishSection.appendChild(englishHeader);
+                englishSection.appendChild(englishContent);
+                hadithContainer.appendChild(englishSection);
+                
                 // Collapsible logic
-                [farsiHeader, arabicHeader].forEach((header, idx) => {
+                [farsiHeader, arabicHeader, englishHeader].forEach((header, idx) => {
                     header.addEventListener('click', function() {
                         const content = this.nextElementSibling;
                         const arrow = this.querySelector('.arrow');
@@ -634,6 +659,73 @@
                 } else {
                     hadithContainer.innerHTML += '<div style="color:#888; margin-top:1rem;">هیچ رابطه‌ای ثبت نشده است.</div>';
                 }
+                
+                // TTL Graph Visualization Section
+                if (hadith.turtle && hadith.turtle.trim()) {
+                    const ttlSection = document.createElement('div');
+                    ttlSection.className = 'ttl-graph-section';
+                    ttlSection.style.marginTop = '2rem';
+                    
+                    const ttlHeader = document.createElement('h3');
+                    ttlHeader.style.color = 'var(--primary-color)';
+                    ttlHeader.style.marginBottom = '0.5rem';
+                    ttlHeader.style.display = 'flex';
+                    ttlHeader.style.alignItems = 'center';
+                    ttlHeader.style.gap = '8px';
+                    ttlHeader.innerHTML = '<span>۶. نمایش گراف TTL</span><span title="گراف TTL، نمایش بصری روابط معنایی حدیث است." style="cursor:help; font-size:1.2rem; color:#00acc1;">ℹ️</span>';
+                    ttlSection.appendChild(ttlHeader);
+                    
+                    // TTL Graph controls
+                    const ttlControls = document.createElement('div');
+                    ttlControls.style.display = 'flex';
+                    ttlControls.style.justifyContent = 'flex-end';
+                    ttlControls.style.gap = '0.5rem';
+                    ttlControls.style.marginBottom = '0.5rem';
+                    ttlControls.innerHTML = `
+                        <button id="ttlZoomInBtn-${selectedHadithIndex}" title="بزرگ‌نمایی" style="padding:0.4rem 0.8rem;font-size:1.2rem;border-radius:6px;border:1px solid #1e88e5;background:#e3f2fd;color:#1e88e5;cursor:pointer;">+</button>
+                        <button id="ttlZoomOutBtn-${selectedHadithIndex}" title="کوچک‌نمایی" style="padding:0.4rem 0.8rem;font-size:1.2rem;border-radius:6px;border:1px solid #1e88e5;background:#e3f2fd;color:#1e88e5;cursor:pointer;">-</button>
+                        <button id="ttlFitBtn-${selectedHadithIndex}" title="نمایش کامل گراف" style="padding:0.4rem 0.8rem;font-size:1.2rem;border-radius:6px;border:1px solid #1e88e5;background:#e3f2fd;color:#1e88e5;cursor:pointer;">🖼️</button>
+                        <button id="ttlResetBtn-${selectedHadithIndex}" title="بازنشانی" style="padding:0.4rem 0.8rem;font-size:1.2rem;border-radius:6px;border:1px solid #1e88e5;background:#e3f2fd;color:#1e88e5;cursor:pointer;">🔄</button>
+                    `;
+                    ttlSection.appendChild(ttlControls);
+                    
+                    // TTL Graph container
+                    const ttlGraphContainer = document.createElement('div');
+                    ttlGraphContainer.id = `ttl-graph-${selectedHadithIndex}`;
+                    ttlGraphContainer.style.height = '500px';
+                    ttlGraphContainer.style.background = '#f7f8fa';
+                    ttlGraphContainer.style.border = '1.5px solid #dddfe2';
+                    ttlGraphContainer.style.borderRadius = '12px';
+                    ttlGraphContainer.style.margin = '1rem 0';
+                    ttlGraphContainer.style.position = 'relative';
+                    ttlSection.appendChild(ttlGraphContainer);
+                    
+                    // Stats display for TTL graph
+                    const ttlStatsDisplay = document.createElement('div');
+                    ttlStatsDisplay.id = `ttl-stats-${selectedHadithIndex}`;
+                    ttlStatsDisplay.style.position = 'absolute';
+                    ttlStatsDisplay.style.bottom = '0';
+                    ttlStatsDisplay.style.left = '0';
+                    ttlStatsDisplay.style.right = '0';
+                    ttlStatsDisplay.style.background = 'rgba(255, 255, 255, 0.95)';
+                    ttlStatsDisplay.style.borderRadius = '8px 8px 0 0';
+                    ttlStatsDisplay.style.padding = '12px';
+                    ttlStatsDisplay.style.boxShadow = '0 -2px 8px rgba(0,0,0,0.1)';
+                    ttlStatsDisplay.style.zIndex = '1000';
+                    ttlStatsDisplay.style.backdropFilter = 'blur(5px)';
+                    ttlStatsDisplay.style.borderTop = '1px solid rgba(0,0,0,0.1)';
+                    ttlStatsDisplay.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                    ttlStatsDisplay.style.fontSize = '0.9em';
+                    ttlStatsDisplay.style.color = '#666';
+                    ttlGraphContainer.appendChild(ttlStatsDisplay);
+                    
+                    hadithContainer.appendChild(ttlSection);
+                    
+                    // Initialize TTL graph after a short delay to ensure DOM is ready
+                    setTimeout(() => {
+                        initializeTTLGraph(hadith.turtle, selectedHadithIndex);
+                    }, 100);
+                }
             } catch (err) {
                 console.error('Error in displayHadith:', err);
                 const hadithContainer = document.getElementById('hadithDisplay');
@@ -805,6 +897,371 @@
         document.getElementById('guideModal').addEventListener('click', function(e) {
             if (e.target === this) this.style.display = 'none';
         });
+        
+        // Beautiful color palette for categories
+        const beautifulColors = [
+            '#A12669', // Deep rose/magenta
+            '#AAC086'  // Soft sage green
+        ];
+        
+        // Function to get a beautiful color for categories
+        function getBeautifulColor(index) {
+            return beautifulColors[index % beautifulColors.length];
+        }
+        
+        // TTL Graph Visualization Functions
+        function initializeTTLGraph(ttlData, hadithIndex) {
+            try {
+                const container = document.getElementById(`ttl-graph-${hadithIndex}`);
+                if (!container) {
+                    console.error(`Container not found for hadith ${hadithIndex}`);
+                    return;
+                }
+                
+                // Initialize ECharts
+                const chart = echarts.init(container);
+                ttlCharts.set(hadithIndex, chart); // Store the chart
+                
+                // Parse TTL data
+                if (typeof N3 === 'undefined') {
+                    showToast('خطا', 'کتابخانه N3.js بارگذاری نشده است.', 'error');
+                    return;
+                }
+                
+                const parser = new N3.Parser();
+                const store = new N3.Store();
+                let parsingError = null;
+                
+                parser.parse(ttlData, (error, quad, prefixes) => {
+                    if (parsingError) return;
+                    if (error) {
+                        parsingError = error;
+                        console.error("Error during N3 parsing:", error);
+                        return;
+                    }
+                    if (quad) {
+                        store.addQuad(quad);
+                    } else {
+                        // Parsing complete
+                        if (parsingError) {
+                            showToast('خطا', `خطا در پردازش TTL: ${parsingError.message}`, 'error');
+                            return;
+                        }
+                        
+                        if (store.size === 0) {
+                            showToast('هشدار', 'داده‌های TTL خالی یا نامعتبر است.', 'warning');
+                            return;
+                        }
+                        
+                        try {
+                            const { nodes, links } = transformRdfToEcharts(store, prefixes);
+                            renderTTLGraph(chart, nodes, links, hadithIndex);
+                        } catch (transformError) {
+                            showToast('خطا', `خطا در تبدیل داده‌ها: ${transformError.message}`, 'error');
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error initializing TTL graph:', error);
+                showToast('خطا', 'خطا در راه‌اندازی گراف TTL', 'error');
+            }
+        }
+        
+        function transformRdfToEcharts(store, prefixes) {
+            const nodes = [];
+            const links = [];
+            const nodeMap = new Map();
+            const connectedNodes = new Set();
+            
+            // Helper function to get readable name from term
+            function getTermName(term) {
+                if (term.termType === 'NamedNode') {
+                    const uri = term.value;
+                    // Try to extract a readable name from the URI
+                    const parts = uri.split(/[#\/]/);
+                    return parts[parts.length - 1] || uri;
+                } else if (term.termType === 'Literal') {
+                    return term.value;
+                } else if (term.termType === 'BlankNode') {
+                    return `_:${term.value}`;
+                }
+                return term.value;
+            }
+            
+            // Helper function to guess category
+            function guessCategory(term, store, prefixes, getTermNameFunc) {
+                if (term.termType === 'NamedNode') {
+                    const uri = term.value;
+                    if (uri.includes('ontology') || uri.includes('go:')) return 'Ontology';
+                    if (uri.includes('instances') || uri.includes('ex:')) return 'Instance';
+                    if (uri.includes('Command') || uri.includes('Statement')) return 'Proposition';
+                    if (uri.includes('Person') || uri.includes('DivineBeing')) return 'Entity';
+                    if (uri.includes('Event') || uri.includes('State')) return 'Event';
+                    if (uri.includes('Concept')) return 'Concept';
+                }
+                return 'Other';
+            }
+            
+            // Process all quads
+            store.forEach(quad => {
+                const subject = quad.subject;
+                const predicate = quad.predicate;
+                const object = quad.object;
+                
+                const subjectId = subject.value;
+                const objectId = object.value;
+                const predicateId = getTermName(predicate);
+                
+                // Track connected nodes
+                if (object.termType === 'NamedNode') {
+                    connectedNodes.add(subjectId);
+                    connectedNodes.add(objectId);
+                }
+                
+                // Add subject node if not exists
+                if (!nodeMap.has(subjectId)) {
+                    const nodeName = getTermName(subject);
+                    const category = guessCategory(subject, store, prefixes, getTermName);
+                    
+                    // Apply visual styling based on node type
+                    let nodeSymbol = undefined;
+                    let nodeItemStyle = undefined;
+                    let nodeSymbolSize = undefined;
+                    
+                    if (typeof subjectId === 'string' && subjectId.startsWith('go:')) {
+                        nodeSymbol = 'diamond';
+                        nodeItemStyle = { color: '#FFA500' }; // Orange for diamonds
+                        nodeSymbolSize = 70; // Bigger size for diamonds
+                    }
+                    
+                    const node = {
+                        id: subjectId,
+                        name: nodeName,
+                        category: category,
+                        properties: {},
+                        itemStyle: {
+                            opacity: 1.0 // Default opacity for connected nodes
+                        },
+                        ...(nodeSymbol ? { symbol: nodeSymbol } : {}),
+                        ...(nodeItemStyle ? { itemStyle: { ...nodeItemStyle, opacity: 1.0 } } : {}),
+                        ...(nodeSymbolSize ? { symbolSize: nodeSymbolSize } : {})
+                    };
+                    nodes.push(node);
+                    nodeMap.set(subjectId, node);
+                }
+                
+                // Add object node if it's a NamedNode and not exists
+                if (object.termType === 'NamedNode' && !nodeMap.has(objectId)) {
+                    const nodeName = getTermName(object);
+                    const category = guessCategory(object, store, prefixes, getTermName);
+                    
+                    // Apply visual styling based on node type
+                    let nodeSymbol = undefined;
+                    let nodeItemStyle = undefined;
+                    let nodeSymbolSize = undefined;
+                    
+                    if (typeof objectId === 'string' && objectId.startsWith('go:')) {
+                        nodeSymbol = 'diamond';
+                        nodeItemStyle = { color: '#FFA500' }; // Orange for diamonds
+                        nodeSymbolSize = 70; // Bigger size for diamonds
+                    }
+                    
+                    const node = {
+                        id: objectId,
+                        name: nodeName,
+                        category: category,
+                        properties: {},
+                        itemStyle: {
+                            opacity: 1.0 // Default opacity for connected nodes
+                        },
+                        ...(nodeSymbol ? { symbol: nodeSymbol } : {}),
+                        ...(nodeItemStyle ? { itemStyle: { ...nodeItemStyle, opacity: 1.0 } } : {}),
+                        ...(nodeSymbolSize ? { symbolSize: nodeSymbolSize } : {})
+                    };
+                    nodes.push(node);
+                    nodeMap.set(objectId, node);
+                }
+                
+                // Add link
+                if (object.termType === 'NamedNode') {
+                    const link = {
+                        source: subjectId,
+                        target: objectId,
+                        label: { text: predicateId }
+                    };
+                    links.push(link);
+                }
+                
+                // Add properties to nodes
+                if (object.termType === 'Literal') {
+                    const subjectNode = nodeMap.get(subjectId);
+                    if (subjectNode) {
+                        const predName = getTermName(predicate);
+                        subjectNode.properties[predName] = objectId;
+                    }
+                }
+            });
+            
+            // Make isolated nodes transparent
+            nodes.forEach(node => {
+                if (!connectedNodes.has(node.id)) {
+                    if (!node.itemStyle) {
+                        node.itemStyle = {};
+                    }
+                    node.itemStyle.opacity = 0.3; // Make isolated nodes transparent
+                }
+            });
+            
+            return { nodes, links };
+        }
+        
+        function renderTTLGraph(chart, nodes, links, hadithIndex) {
+            // Extract categories with beautiful colors
+            const categories = [];
+            const categorySet = new Set();
+            let colorIndex = 0;
+            nodes.forEach(node => {
+                if (!categorySet.has(node.category)) {
+                    categorySet.add(node.category);
+                    categories.push({ 
+                        name: node.category,
+                        itemStyle: { color: getBeautifulColor(colorIndex++) }
+                    });
+                }
+            });
+            
+            const option = {
+                tooltip: {
+                    formatter: function (params) {
+                        if (params.dataType === 'node' && params.data) {
+                            let tip = params.data.name;
+                            if (params.data.properties) {
+                                for (const prop in params.data.properties) {
+                                    tip += `<br/>${prop}: ${params.data.properties[prop]}`;
+                                }
+                            }
+                            return tip;
+                        } else if (params.dataType === 'edge' && params.data.label && params.data.label.text) {
+                            return params.data.label.text;
+                        }
+                        return params.name;
+                    }
+                },
+                legend: {
+                    data: categories.map(c => c.name),
+                    orient: 'vertical',
+                    left: 'left',
+                    top: 'middle'
+                },
+                series: [{
+                    type: 'graph',
+                    layout: 'force',
+                    roam: true,
+                    draggable: true,
+                    label: {
+                        show: true,
+                        position: 'right',
+                        formatter: '{b}'
+                    },
+                    categories: categories,
+                    data: nodes,
+                    links: links,
+                    symbolSize: 50, // Default symbol size
+                    edgeSymbol: ['circle', 'arrow'], // Edge symbols
+                    edgeSymbolSize: [4, 10], // Edge symbol sizes
+                    lineStyle: {
+                        opacity: 0.9,
+                        width: 2,
+                        curveness: 0
+                    },
+                    edgeLabel: {
+                        show: true,
+                        formatter: function (params) {
+                            return params.data && params.data.label && params.data.label.text
+                                ? params.data.label.text
+                                : '';
+                        },
+                        fontSize: 10 // Smaller font for edge labels
+                    },
+                    force: {
+                        edgeLength: 200,
+                        repulsion: 1200,
+                        gravity: 0.1
+                    },
+                    itemStyle: {
+                        color: function(params) {
+                            // Check if node has custom styling (like diamond nodes)
+                            if (params.data.itemStyle && params.data.itemStyle.color) {
+                                return params.data.itemStyle.color;
+                            }
+                            // Default category-based coloring using random colors
+                            const category = categories.find(c => c.name === params.data.category);
+                            return category && category.itemStyle ? category.itemStyle.color : '#5470c6';
+                        }
+                    }
+                }]
+            };
+            
+            chart.setOption(option);
+            
+            // Add control event listeners
+            setTimeout(() => {
+                const zoomInBtn = document.getElementById(`ttlZoomInBtn-${hadithIndex}`);
+                const zoomOutBtn = document.getElementById(`ttlZoomOutBtn-${hadithIndex}`);
+                const fitBtn = document.getElementById(`ttlFitBtn-${hadithIndex}`);
+                const resetBtn = document.getElementById(`ttlResetBtn-${hadithIndex}`);
+                
+                if (zoomInBtn) zoomInBtn.onclick = () => {
+                    const currentZoom = chart.getOption().series[0].zoom || 1;
+                    chart.setOption({ series: [{ zoom: currentZoom * 1.2 }] });
+                };
+                
+                if (zoomOutBtn) zoomOutBtn.onclick = () => {
+                    const currentZoom = chart.getOption().series[0].zoom || 1;
+                    chart.setOption({ series: [{ zoom: currentZoom / 1.2 }] });
+                };
+                
+                if (fitBtn) fitBtn.onclick = () => {
+                    chart.resize();
+                };
+                
+                if (resetBtn) resetBtn.onclick = () => {
+                    chart.setOption(option, true);
+                };
+            }, 100);
+            
+            // Update stats
+            updateTTLStats(nodes.length, links.length, hadithIndex);
+        }
+        
+        function updateTTLStats(nodeCount, linkCount, hadithIndex) {
+            const statsDisplay = document.getElementById(`ttl-stats-${hadithIndex}`);
+            if (statsDisplay) {
+                statsDisplay.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; gap: 8px;">
+                        <div style="flex: 1; padding: 4px 8px; background: rgba(0,0,0,0.03); border-radius: 4px; text-align: center;">
+                            <span style="color: #666; font-size: 0.9em;">گره‌ها:</span>
+                            <span style="color: #333; font-weight: 500;">${nodeCount}</span>
+                        </div>
+                        <div style="flex: 1; padding: 4px 8px; background: rgba(0,0,0,0.03); border-radius: 4px; text-align: center;">
+                            <span style="color: #666; font-size: 0.9em;">روابط:</span>
+                            <span style="color: #333; font-weight: 500;">${linkCount}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function cleanupTTLCharts() {
+            // Dispose of charts that are no longer needed
+            ttlCharts.forEach((chart, index) => {
+                if (chart && !chart.isDisposed()) {
+                    chart.dispose();
+                }
+            });
+            ttlCharts.clear();
+        }
     </script>
 </body>
 </html>

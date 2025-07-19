@@ -2,6 +2,7 @@
         "vol_tiltle": "ترجمه اصول کافی جلد اول",
         "content": "1.  «پيامبر خدا صلى‌الله‌عليه‌و‌آله فرمود: تحصيل دانش وظيفه هر مسلمانى است. هان! خداوند جويندگان دانش را دوست دارد».",
         "content_ar": "1. \nعَنْ أَبِي عَبْدِ اللّه‌ِ عليه‌السلام، قَالَ: «قَالَ رَسُولُ اللّه‌ِ صلى‌الله‌عليه‌و‌آله: طَلَبُ الْعِلْمِ فَرِيضَةٌ عَلى كُلِّ مُسْلِمٍ، أَلاَ إِنَّ اللّه‌َ يُحِبُّ بُغَاةَ الْعِلْمِ».",
+        "content_Eng": "1. Seeking knowledge is a duty upon every Muslim.\n2. God loves those who seek knowledge.",
         "hadith_propositions": [
             {
                 "id": "1",
@@ -20,5 +21,7 @@
                 "target": "2",
                 "type": "elaboration"
             }
-        ]
-    }]
+        ],
+        "turtle": "@prefix go: <http://example.org/ontology/> .\n@prefix ex: <http://example.org/instances/> .\n\nex:Event1 a go:Obligation ;\n    go:HasAgent ex:Muslim ;\n    go:HasTheme ex:ActOfSeekingKnowledge ;\n    go:ExpressedIn ex:Prop1 .\n\nex:Prop1 a go:Command ;\n    go:hasContent \"Seeking knowledge is a duty upon every Muslim.\" .\n\nex:Muslim a go:Person .\n\nex:ActOfSeekingKnowledge a go:Event ;\n    go:HasTheme ex:Knowledge ;\n    go:HasAgent ex:Muslim .\n\nex:Knowledge a go:Concept .\n\nex:Statement1 a go:Statement ;\n    go:ExpressedIn ex:Prop2 ;\n    go:Describes ex:LoveEvent1 .\n\nex:Prop2 a go:Statement ;\n    go:hasContent \"God loves those who seek knowledge.\" .\n\nex:God a go:DivineBeing .\n\nex:LoveEvent1 a go:State ;\n    go:HasExperiencer ex:God ;\n    go:HasTheme ex:SeekersOfKnowledge .\n\nex:SeekersOfKnowledge a go:Person ;\n    go:EngagesIn ex:ActOfSeekingKnowledge .\n\n# Inter-propositional relation\nex:Prop2 go:elaborates ex:Prop1 ."
+    }
+]
